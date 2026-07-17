@@ -19,8 +19,15 @@ is a thing that will produce a confidently wrong answer if ignored.
 | `delivered_sections` | `delivered_sessions` exploded by section | `batch_section_name` is a **comma-separated list** ("TU Batch-1-S-002, TU Batch-1-S-003"); one row can cover several sections. Use this view for per-section questions — counting `batch_section_name` counts section *groupings*, not sections. |
 | `delivered_niat` | one row per planned session | Has course/instructor/status. **34% (53,643 rows) were never scheduled** — `is_scheduled = false`, `start_ts` null. Filter on `is_scheduled` or you will count sessions that never happened. |
 | `designed_sequence` | one row per unit per sheet | The plan (HLID/Prod). **Semester 1 only.** May contain the same `unit_id` more than once (MRV has a "NEW BATCH" re-plan alongside the original) — dedupe by `unit_id` when counting. |
-| `designed_course_plan` | one row per university×course | HLID "Student Journey": planned session counts, hours, start/end timelines. Sem 1 block only. |
+| `designed_course_plan` | one row per university×course | HLID "Student Journey": planned session counts, hours, start/end timelines. Sem 1 block only. **`is_submodule='True'` rows are components of the course above them — ALWAYS exclude them from any total** (see below). |
 | `deviation` | one row per university×unit | Pre-solved designed↔delivered join. Use this rather than re-deriving it. |
+| `course_plan_vs_actual` | one row per university×course | **Pre-solved plan-vs-delivery, already per-section.** Use this for any "how did the plan hold up / give me a better plan" question. |
+
+## ⚠️ `designed_course_plan.is_submodule` — read before summing anything
+
+The HLID lists a course **and then its component modules as sibling rows**. For MRV: `Web Application Development-1` (75 sessions) is followed by `Build Your own Static Website` (28) + `Build Your own Responsive Website` (15) + `Modern Responsive Web Design` (17) + `Build Your Own Dynamic Web Application` (15) — which sum to exactly 75. **They are the same sessions listed twice.**
+
+Summing every row inflates MRV's Sem-1 load from **460 hrs to 593 (+29%)**, turning a sensible 93%-utilised plan into a fictional 120% overload — and every recommendation built on that is wrong. Always filter `WHERE is_submodule <> 'True'`, or just use `course_plan_vs_actual`, which already does. (MRV and CDU have sub-modules; Yenepoya and SGU do not.)
 | `session_feedback_safe` | one row per institute×session×unit | Ratings and counts. **Use this, not `session_feedback`.** |
 | `content_units` | one row per content item | Union of objective/coding/reading. `unit_id` repeats (many questions per unit). |
 | `sessions` | distinct session→unit catalogue | Same unit set as `delivered_sessions`; largely redundant with it. |
@@ -59,6 +66,34 @@ The view covers **Semester 1 only** and **only the 4 universities with designed 
 - **Fine unit types are not recorded.** Delivered data has only coarse `session_type` (LECTURE/PRACTICE/EXAM) × `resource_type` (LP_RESOURCE/LP_QUIZ). Classroom quiz vs MCQ vs coding practice vs module quiz vs reading material **cannot** be distinguished from delivery data — only inferred from the content tables, for the ~19% covered.
 - **~30% of content units are never scheduled** in any delivery.
 - Semester windows derived from min/max session dates have a stray Jun–Jul 2026 tail (a data artifact); prefer explicit semester filters.
+
+## Recipes for the common analytical questions
+
+Use these instead of exploring from scratch — exploration burns the tool-call budget and you will run out before you reach a conclusion.
+
+**"How did the plan hold up / give me a better HLID / what went wrong at <UNI>"**
+```sql
+SELECT * FROM course_plan_vs_actual WHERE university = 'MRV' ORDER BY start_slip_days;
+SELECT * FROM planning_standards;
+```
+That is nearly the whole investigation in two queries. It gives you, per course: planned vs actual sessions (per section), start slip in days, actual weeks, % completed, and `coverage` — which flags courses **delivered but absent from the HLID** and vice versa. Then:
+- Total `planned_total_hours` for the university → compare to the **495-hour budget** and the **15-week floor**.
+- Compare `actual_weeks` to `planned_weeks` — if delivery consistently needed more, the plan was too short.
+- Check ratings (below) before blaming delivery.
+
+**"Is this a planning problem or a delivery problem?"**
+```sql
+SELECT ds.course, count(DISTINCT f.session_id) AS rated,
+       round(avg(TRY_CAST(f.session_understanding_rating AS DOUBLE)),2) AS understanding,
+       round(avg(TRY_CAST(f.teaching_quality_rating AS DOUBLE)),2)      AS teaching
+FROM session_feedback_safe f
+JOIN designed_sequence ds ON ds.unit_id = f.unit_ids AND ds.university = 'MRV'
+WHERE f.institute_name = 'Malla Reddy Vishwavidyapeeth'
+GROUP BY 1 HAVING count(DISTINCT f.session_id) >= 3 ORDER BY 3;
+```
+Good ratings (4+) alongside heavy slippage ⇒ **planning** problem: fix the HLID. Poor ratings ⇒ **delivery** problem: fixing the HLID will not help.
+
+**"How many sections does a university have?"** — `delivered_niat.section_name` for the 4 designed universities; `delivered_sections` (the exploded view) elsewhere, because `delivered_sessions.batch_section_name` is a comma-separated list.
 
 ## How to answer
 

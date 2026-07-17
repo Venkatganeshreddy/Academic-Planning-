@@ -94,7 +94,28 @@ def feedback_safe_hides_comments():
     assert not leaked, f"comment text leaked into the agent-facing view: {leaked}"
 
 
+def submodules_not_double_counted():
+    """MRV's HLID lists Web App Dev-1 (75 sessions) AND its 4 parts (28+15+17+15=75).
+
+    Summing every row gives 593 hrs instead of 460 (+29%) and turns a 93%-utilised
+    plan into a fictional 120% overload. The agent made exactly this error.
+    """
+    _, rows, _ = db.run_sql("""SELECT round(sum(planned_total_hours),0)
+        FROM course_plan_vs_actual WHERE university='MRV'""", con)
+    assert rows[0][0] == 460, f"expected MRV planned total 460 hrs, got {rows[0][0]} (sub-module double-count?)"
+
+
+def plan_vs_actual_finds_unplanned_courses():
+    """MRV delivered Intro to NIAT / Test Your Current Knowledge / Foreign Language,
+    none of which are in its HLID. The FULL OUTER join must surface them."""
+    _, rows, _ = db.run_sql("""SELECT count(*) FROM course_plan_vs_actual
+        WHERE university='MRV' AND coverage='delivered_not_planned'""", con)
+    assert rows[0][0] == 3, f"expected 3 delivered-but-not-planned MRV courses, got {rows[0][0]}"
+
+
 check("MRV Semester 1 = 7702 rows", mrv_sem1)
+check("sub-modules not double-counted (MRV = 460 hrs, not 593)", submodules_not_double_counted)
+check("plan_vs_actual surfaces delivered-but-unplanned courses", plan_vs_actual_finds_unplanned_courses)
 check("delivered timestamps are plausible", timestamps_are_real)
 check("deviation planned_start within 2025-26", planned_start_sane)
 check("deviation covers only designed universities", deviation_scoped_to_designed_unis)

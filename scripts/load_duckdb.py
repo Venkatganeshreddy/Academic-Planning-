@@ -96,6 +96,75 @@ def build(db="data/aip.duckdb", verbose=True):
           ON d.unit_id = v.unit_id AND d.institute_name = v.institute_name
         LEFT JOIN universities u2 ON u2.institute_name = v.institute_name""")
 
+    # course_plan_vs_actual: the whole planned-vs-delivered comparison, per course,
+    # already normalised PER SECTION. This is the single most-asked analytical shape
+    # ("how did the plan hold up", "give me a better HLID") and it takes ~7 dependent
+    # queries to assemble by hand — more than an agent reliably finishes. Encoded once.
+    #
+    # FULL OUTER on purpose: courses planned-but-never-delivered AND delivered-but-never
+    # -planned (MRV ran Introduction to NIAT, Test Your Current Knowledge and Foreign
+    # Language, none of which are in its HLID) are both real findings.
+    con.execute("""CREATE VIEW course_plan_vs_actual AS
+        WITH plan AS (
+            SELECT p.university, u.institute_name, p.course,
+                   lower(regexp_replace(p.course, '[^A-Za-z0-9]', '', 'g')) AS k,
+                   TRY_CAST(p.sessions_count AS DOUBLE)         AS planned_sessions,
+                   TRY_CAST(p.session_hours AS DOUBLE)          AS planned_session_hours,
+                   TRY_CAST(p.practice_hours AS DOUBLE)         AS planned_practice_hours,
+                   TRY_CAST(p.micro_assessment_hours AS DOUBLE) AS planned_micro_hours,
+                   coalesce(TRY_CAST(p.session_hours AS DOUBLE),0)
+                     + coalesce(TRY_CAST(p.practice_hours AS DOUBLE),0)
+                     + coalesce(TRY_CAST(p.micro_assessment_hours AS DOUBLE),0) AS planned_total_hours,
+                   try_cast(p.start_timeline AS DATE)           AS planned_start,
+                   try_cast(p.end_timeline AS DATE)             AS planned_end,
+                   TRY_CAST(p.weeks_required AS DOUBLE)         AS planned_weeks
+            FROM designed_course_plan p
+            JOIN universities u ON u.code = p.university
+            -- sub-modules are components of the course above them; including them double-counts
+            WHERE lower(coalesce(p.is_submodule,'false')) <> 'true'
+        ),
+        secs AS (
+            SELECT institute_name, count(DISTINCT section_name) AS n_sections
+            FROM delivered_niat WHERE semester = 'Semester 1' GROUP BY 1
+        ),
+        act AS (
+            SELECT d.institute_name, d.course_title,
+                   lower(regexp_replace(d.course_title, '[^A-Za-z0-9]', '', 'g')) AS k,
+                   s.n_sections,
+                   round(count(*) FILTER (WHERE d.session_type='LECTURE')  * 1.0 / s.n_sections, 1) AS actual_lectures_per_section,
+                   round(count(*) FILTER (WHERE d.session_type='PRACTICE') * 1.0 / s.n_sections, 1) AS actual_practice_per_section,
+                   round(count(*) FILTER (WHERE d.session_type='EXAM')     * 1.0 / s.n_sections, 1) AS actual_exam_per_section,
+                   min(d.start_ts)::DATE AS actual_start,
+                   max(d.start_ts)::DATE AS actual_end,
+                   count(DISTINCT date_trunc('week', d.start_ts)) AS actual_weeks,
+                   round(100.0 * count(*) FILTER (WHERE d.session_status='COMPLETED') / count(*), 0) AS pct_completed
+            FROM delivered_niat d
+            JOIN secs s ON s.institute_name = d.institute_name
+            WHERE d.semester = 'Semester 1' AND d.is_scheduled
+            GROUP BY 1, 2, 3, 4
+        )
+        SELECT
+            coalesce(plan.university, u2.code)                 AS university,
+            coalesce(plan.institute_name, act.institute_name)  AS institute_name,
+            coalesce(plan.course, act.course_title)            AS course,
+            CASE WHEN plan.k IS NULL THEN 'delivered_not_planned'
+                 WHEN act.k  IS NULL THEN 'planned_not_delivered'
+                 ELSE 'both' END                               AS coverage,
+            plan.planned_sessions, plan.planned_session_hours, plan.planned_practice_hours,
+            plan.planned_micro_hours, plan.planned_total_hours,
+            plan.planned_start, plan.planned_end, plan.planned_weeks,
+            act.actual_lectures_per_section, act.actual_practice_per_section,
+            act.actual_exam_per_section, act.actual_start, act.actual_end,
+            act.actual_weeks, act.pct_completed, act.n_sections,
+            date_diff('day', plan.planned_start, act.actual_start) AS start_slip_days,
+            act.actual_lectures_per_section - plan.planned_sessions AS session_gap
+        FROM plan
+        FULL OUTER JOIN act
+          ON plan.institute_name = act.institute_name
+         AND (plan.k = act.k OR starts_with(plan.k, act.k) OR starts_with(act.k, plan.k))
+        LEFT JOIN universities u2 ON u2.institute_name = act.institute_name
+        WHERE coalesce(plan.university, u2.code) IS NOT NULL""")
+
     if verbose:
         print("=== aip.duckdb (from committed canonical) ===")
         for (t,) in con.execute("SHOW TABLES").fetchall():

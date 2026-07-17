@@ -186,6 +186,7 @@ def extract_hlid(uni, path):
         if title.strip().lower() == "course":
             break  # second (Sem-2) block starts here
         cell = lambda i: row[i] if (i is not None and len(row) > i) else None
+        weeks = to_f(cell(c_wk))
         out.append({
             "university": uni,
             "course": title,
@@ -195,7 +196,14 @@ def extract_hlid(uni, path):
             "micro_assessment_hours": to_f(cell(c_mh)),
             "start_timeline": to_date(cell(c_start)),
             "end_timeline": to_date(cell(c_end)),
-            "weeks_required": to_f(cell(c_wk)),
+            "weeks_required": weeks,
+            # A sub-module is a COMPONENT of the course above it, not a course. The HLID
+            # lists e.g. Web Application Development-1 (75 sessions) and then its four
+            # parts (28+15+17+15 = 75) as sibling rows. Summing every row double-counts
+            # them — which overstated MRV's Sem-1 load as 593 hrs instead of 460 (+29%)
+            # and turned a 93%-utilised plan into a fictional 120% overload.
+            # Marker: parents carry weeks_required; sub-modules leave it blank.
+            "is_submodule": weeks is None,
         })
     return out
 
@@ -239,7 +247,24 @@ write(f"{OUT}/designed_sequence.csv", seq_rows,
        "planned_start_derived", "session_name", "type", "sheet", "seq"])
 write(f"{OUT}/designed_course_plan.csv", plan_rows,
       ["university", "course", "sessions_count", "session_hours", "practice_hours",
-       "micro_assessment_hours", "start_timeline", "end_timeline", "weeks_required"])
+       "micro_assessment_hours", "start_timeline", "end_timeline", "weeks_required",
+       "is_submodule"])
+
+# Report the parent/sub-module split and verify sub-modules really do roll up into a
+# parent — if they don't, the is_submodule marker is wrong and totals will be off.
+for uni in UNIS:
+    rows = [p for p in plan_rows if p["university"] == uni]
+    subs = [p for p in rows if p["is_submodule"]]
+    tops = [p for p in rows if not p["is_submodule"]]
+    hrs = lambda rs: sum((p["session_hours"] or 0) + (p["practice_hours"] or 0)
+                         + (p["micro_assessment_hours"] or 0) for p in rs)
+    if subs:
+        sub_sess = sum(p["sessions_count"] or 0 for p in subs)
+        match = [p["course"] for p in tops if (p["sessions_count"] or 0) == sub_sess]
+        print(f"  {uni:9s} {len(tops)} courses ({hrs(tops):.0f} hrs) + {len(subs)} sub-modules "
+              f"({sub_sess:.0f} sessions -> rolls up into: {match or 'NO PARENT MATCH — CHECK'})")
+    else:
+        print(f"  {uni:9s} {len(tops)} courses ({hrs(tops):.0f} hrs), no sub-modules")
 
 assert seq_rows, "no designed sequence extracted — check data/raw/design/*.xlsx"
 assert all(r["planned_start"] == "" or re.match(r"^\d{4}-\d{2}-\d{2}$", r["planned_start"])

@@ -15,11 +15,15 @@ import requests
 from . import db
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "anthropic/claude-sonnet-4.5"
-# Analytical questions ("give me a better HLID") need many dependent queries: look at
-# the plan, then actuals, then per-section, then ratings, then the standards. 5 was too
-# few to finish that investigation and the agent answered from partial evidence.
-MAX_TOOL_ITERS = 12
+# Opus for synthesis. Advisory answers ("give me a better HLID") are where the tier
+# shows; sonnet-4.5 handled lookups fine but produced thinner analysis. ~1.7x the cost
+# of sonnet-4.5 ($5/$25 vs $3/$15 per M tok) — override with AIP_MODEL if that matters.
+DEFAULT_MODEL = "anthropic/claude-opus-4.8"
+# Analytical questions need a chain of dependent queries: plan, then actuals, then
+# per-section, then ratings, then standards. At 5 the agent ran out mid-investigation
+# and answered from partial evidence ("Investigation truncated..."). The pre-solved
+# course_plan_vs_actual view now collapses most of that into one query; this is headroom.
+MAX_TOOL_ITERS = 16
 NOTES_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "data-notes.md"
 
 TOOLS = [{
