@@ -1,0 +1,2 @@
+# local machine settings (permission allowlist) — not shared
+.claude/settings.local.json
