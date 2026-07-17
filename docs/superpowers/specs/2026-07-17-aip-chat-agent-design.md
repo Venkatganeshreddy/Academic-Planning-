@@ -24,7 +24,8 @@ This is a **general-purpose Q&A agent over the whole store**, not a deviation to
 The design must not privilege any one question shape. Coverage of the **schema** is what determines capability.
 
 **Non-goals (v1):**
-- Model fine-tuning. "Learning" is prompt-context (few-shot examples + notes), not training.
+- **Self-improvement.** Feedback is captured but not fed back into the agent's behaviour. Deferred to v2 (§13) — we want to see what people actually ask, and whether answers are good, before teaching it anything.
+- Model fine-tuning, ever. If the loop returns it will be prompt-context, not training.
 - Writing to any source system. The agent is strictly read-only.
 - Quoting student free-text feedback (see §7).
 - Replacing the fortnightly report or the recommendation queue.
@@ -36,7 +37,8 @@ The design must not privilege any one question shape. Coverage of the **schema**
 | Question types | All: analytics/metrics, content lookup, and open-ended advisory |
 | How it answers | Tool-calling agent with a read-only SQL tool (not single-shot text-to-SQL, not a fixed metrics library) |
 | Data scope | Everything: existing canonical + **new** delivered scheduling + **new** designed HLID/Prod sequence |
-| Improvement loop | Both: learned question→SQL few-shot examples **and** a durable corrections/notes memory |
+| Improvement loop | **Capture only in v1.** Per-response feedback is recorded; nothing is fed back automatically. Deferred (§13). |
+| Semester scope | Load delivered Sem 1 **and** Sem 2; designed data is Sem 1 only, so the agent says so when asked to compare Sem 2 |
 | Hosting | Streamlit Community Cloud |
 | Student comment text | **Not exposed to the agent** (ratings + counts only) |
 
@@ -47,7 +49,7 @@ Streamlit chat UI (app.py)
       │ question + history
       ▼
 Agent loop (aip/agent.py) ──► OpenRouter /chat/completions (tool-calling)
-      │  system prompt = schema + knowledge_notes + few-shot qa_examples
+      │  system prompt = data dictionary + caveats   (static in v1)
       │  tool: run_sql(query)
       ▼
 DuckDB read-only (aip/db.py) — aip.duckdb rebuilt at startup from committed data
@@ -57,13 +59,14 @@ DuckDB read-only (aip/db.py) — aip.duckdb rebuilt at startup from committed da
 answer + SQL trace → UI renders answer, "show SQL", 👍/👎, "What could be improved?"
       │
       ▼
-Google Sheet (aip/memory.py): feedback_log | qa_examples | knowledge_notes
-      └── read at startup (cached) → injected into next prompt   ← learning loop
+Google Sheet (aip/feedback.py): feedback_log        ← write-only in v1; humans read it
 ```
+
+**The feedback path is one-way in v1.** Nothing read from the Sheet re-enters the prompt. The arrow back into the agent is deliberately absent — see §13.
 
 **Why a tool-calling agent:** one mechanism covers all three question types — analytics are aggregations, content lookup is a select, advisory is query-then-reason. It can iterate (query → look → refine), which single-shot text-to-SQL cannot.
 
-**Why Google Sheets for the loop:** Streamlit Community Cloud has an **ephemeral filesystem** — it wipes on redeploy/sleep, so feedback written to a local file would vanish and the learning loop would silently never accumulate. A Sheet survives restarts, is human-reviewable, and matches how the team already works.
+**Why Google Sheets:** Streamlit Community Cloud has an **ephemeral filesystem** — it wipes on redeploy/sleep, so feedback written to a local file would silently vanish. A Sheet survives restarts, is human-reviewable, and matches how the team already works. This is the only reason the Sheet exists in v1: durable storage for feedback humans will read.
 
 ## 4. Data layer
 
@@ -125,13 +128,12 @@ These go into the system prompt verbatim, because they change how answers should
 - `answer(question, history) -> (text, sql_trace)`.
 - Model is a config value (`MODEL` secret), not hardcoded — per the parent design doc's per-agent model config.
 - Max 5 tool iterations, then answer with what it has or say it couldn't.
-- System prompt = **`docs/data-dictionary.md` (§4.3)** + §4.4 caveats + all `knowledge_notes` + recent K `qa_examples`.
+- System prompt = **`docs/data-dictionary.md` (§4.3)** + §4.4 caveats. **Static in v1** — no learned content.
 - The prompt is deliberately schema-heavy and instruction-light: breadth of question coverage comes from the agent knowing the data, not from task-specific prompting.
 
-**`aip/memory.py`** — Google Sheets access via service account.
-- `load_notes()`, `load_examples()` — cached (`st.cache_data`, TTL 5 min).
-- `log_feedback(row)` — append to `feedback_log`.
-- `promote_example(question, sql)` / `add_note(text)`.
+**`aip/feedback.py`** — Google Sheets append via service account.
+- `log_feedback(row)` — append one row to `feedback_log`. That is the whole module in v1.
+- Write-only. Nothing is read back into the agent.
 
 ## 6. UI & the feedback loop
 
@@ -146,11 +148,9 @@ Every assistant response renders, in order:
 
 Feedback is **per response**, not per session. Each submission appends one `feedback_log` row: timestamp, question, sql, answer, verdict (up/down/none), improvement_text, model.
 
-**How it feeds back:**
-- 👍 → the question→SQL pair is promoted to `qa_examples`, injected as few-shot for future questions.
-- 👎 and/or improvement text → written to `knowledge_notes` (e.g. *"MRV = Malla Reddy Vishwavidyapeeth"*, *"exclude BREAK sessions"*), injected verbatim into every future system prompt.
+**What happens to it in v1: nothing automatic.** The row lands in the Sheet and a human reads it. The agent's behaviour is unchanged by feedback.
 
-No embeddings or vector search in v1 — inject all notes + the most recent K examples. They are small. Add similarity retrieval only when the prompt measurably outgrows the context, not before.
+The row captures everything needed to wire a loop later (question, the exact SQL, the answer, the verdict, and what the user wanted instead), so deferring the loop costs us no data — only time. See §13.
 
 ## 7. Security & data handling
 
@@ -168,7 +168,7 @@ No embeddings or vector search in v1 — inject all notes + the most recent K ex
 | Non-SELECT generated | Guardrail rejects; the model is told why and may retry once. |
 | Empty result | Answer "no rows matched" and show the SQL. Never fabricate rows. |
 | OpenRouter error/timeout | Retry with backoff; then an honest error message. |
-| Sheets unavailable | Chat still answers. Learning degrades gracefully (log to local file, warn in UI). A memory-store outage must not take down Q&A. |
+| Sheets unavailable | Chat still answers; feedback falls back to a local file and the UI warns that it may not persist. A feedback-store outage must never take down Q&A. |
 | Tool-iteration cap hit | Answer with what was gathered, stating it was truncated. |
 
 The through-line: **degrade to "I couldn't answer," never to a confident wrong number.**
@@ -183,7 +183,8 @@ The through-line: **degrade to "I couldn't answer," never to a confident wrong n
 
 ## 10. Deliberate simplifications (YAGNI)
 
-- No vector search / embeddings — notes and examples are small enough to inject wholesale.
+- **No auto-learning.** Feedback is captured, not applied. The loop is deferred until we know what people ask and whether answers are good — teaching it from an unvalidated 👍 risks entrenching a wrong query.
+- No vector search / embeddings — nothing is retrieved in v1, and when the loop returns, notes will be small enough to inject wholesale.
 - No auth in the app itself — Streamlit Cloud viewer restriction is the access control.
 - No multi-user session state or conversation persistence — chat history lives in `st.session_state` for the session only.
 - No agent-written charts in v1 — text answers + tables. Add plots once the questions being asked are known.
@@ -193,12 +194,21 @@ The through-line: **degrade to "I couldn't answer," never to a confident wrong n
 
 1. **Data**: `build_delivered.py`, `build_designed.py`, `load_duckdb.py` extensions + views, and `docs/data-dictionary.md`. *Done when:* every table and column in the store is described in the dictionary, and the `deviation` view reproduces the MRV numbers we already computed by hand (1,174 overlap, 154 dropped).
 2. **Agent core**: `db.py` guardrails + `agent.py` loop, driven from a CLI. *Done when:* the golden set — spanning **all** areas of the store, not just deviation — answers correctly with valid SQL.
-3. **UI + loop**: `app.py` chat, per-response feedback, Sheets memory. *Done when:* a 👍 example and a 👎 note both visibly change a subsequent answer.
+3. **UI + feedback**: `app.py` chat, per-response 👍/👎 + improvement box, Sheets append. *Done when:* a submitted rating appears as a row in the Sheet, and a Sheets outage does not break chat.
 4. **Deploy**: private repo, Streamlit Cloud, secrets, viewer allowlist.
 
 ## 12. Open questions
 
 1. **Which OpenRouter model** for the agent? Needs tool-calling + decent SQL. To be picked by running the golden set against 2–3 candidates on accuracy vs cost.
-2. **Who owns the Google service account / Sheet** for the memory store?
-3. **Auto-promote or curate?** Should 👍 auto-promote a question→SQL pair into few-shot, or should a human approve it first? Default assumed: auto-promote, since the pair is only reachable if it already produced a good answer.
-4. **Sem 1 only, or Sem 1 + 2?** Delivered data has both; designed exports we hold are Sem 1.
+2. **Who owns the Google service account / Sheet** for the feedback log? Blocks phase 3. If unavailable, fall back to a committed CSV or a small hosted DB.
+3. **Repo visibility** — must be confirmed private before deploy (§7).
+
+## 13. Deferred to v2 — the learning loop
+
+Cut from v1 by decision, not oversight. The `feedback_log` row already captures everything needed to build it: question, SQL, answer, verdict, and the user's improvement text.
+
+When it returns, the likely shape is the one from the parent design doc §6:
+- **Correction notes** — human-written facts ("exclude BREAK sessions", "MRV = Malla Reddy Vishwavidyapeeth") injected verbatim into the system prompt. Low risk; probably first.
+- **Q→SQL few-shot examples** — promoted from 👍'd answers. Higher risk: a plausible-but-wrong query that earned a 👍 would teach the agent a bad pattern, and this store has real footguns (the course crosswalk, dash-less `session_id`). If added, it needs human curation, not auto-promotion.
+
+**Trigger to build it:** enough logged feedback to show a recurring question shape the agent gets wrong. Not a date.
