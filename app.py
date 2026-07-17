@@ -45,9 +45,11 @@ API_KEY = secret("OPENROUTER_API_KEY")
 # tool-calling (verified against OpenRouter's live list), which this agent requires.
 # Prices are input/output per million tokens.
 MODEL_TIERS = [
-    ("Haiku",  "anthropic/claude-haiku-4.5",  "$1/$5 · fastest, cheapest — counts and lookups"),
-    ("Sonnet", "anthropic/claude-sonnet-4.5", "$3/$15 · balanced — most questions"),
-    ("Opus",   "anthropic/claude-opus-4.8",   "$5/$25 · deepest analysis — planning, HLIDs, advisory"),
+    ("Haiku 4.5",  "anthropic/claude-haiku-4.5",  "$1/$5 · fastest, cheapest — counts and lookups"),
+    ("Sonnet 4.5", "anthropic/claude-sonnet-4.5", "$3/$15 · balanced — most questions"),
+    ("Opus 4.6",   "anthropic/claude-opus-4.6",   "$5/$25 · deep analysis"),
+    ("Opus 4.7",   "anthropic/claude-opus-4.7",   "$5/$25 · deep analysis, newer"),
+    ("Opus 4.8",   "anthropic/claude-opus-4.8",   "$5/$25 · deepest — planning, HLIDs, advisory"),
 ]
 TIER_MODEL = {name: model for name, model, _ in MODEL_TIERS}
 TIER_NOTE = {name: note for name, _, note in MODEL_TIERS}
@@ -62,18 +64,23 @@ with st.sidebar:
 
     # AIP_MODEL picks where the slider starts; the slider is the control from then on.
     configured = secret("AIP_MODEL", agent.DEFAULT_MODEL)
-    start = next((n for n, m, _ in MODEL_TIERS if m == configured), "Opus")
+    start = next((n for n, m, _ in MODEL_TIERS if m == configured), "Opus 4.8")
+    # Reserved above the track — filled in after the widget, so it shows the model id
+    # the next question will actually use rather than the tier's short label.
+    name_slot = st.empty()
     tier = st.select_slider(
         "Model",
         options=[n for n, _, _ in MODEL_TIERS],
         value=start,
         help="Slide right for deeper analysis, left for speed and lower cost.",
+        label_visibility="collapsed",   # name_slot above already labels it
     )
     MODEL = TIER_MODEL[tier]
+    name_slot.markdown(f"**Model** &nbsp; `{MODEL}`")
     st.caption(TIER_NOTE[tier])
-    if tier == "Haiku":
-        st.caption("⚠️ Haiku is fine for lookups but weaker on multi-step "
-                   "analysis — use Opus for planning questions.")
+    if tier.startswith("Haiku"):
+        st.caption("⚠️ Fine for lookups, weaker on multi-step analysis — "
+                   "slide to Opus for planning questions.")
 
     tables = [t for (t,) in con.execute("SHOW TABLES").fetchall()]
     with st.expander(f"Data ({len(tables)} tables)"):
