@@ -1,0 +1,15 @@
+metric,value,unit,note
+total_working_days_aicte,90,days,"AICTE minimum academic days per semester. Excludes induction and mid/end exams."
+effective_instructional_hours_per_day,7,hours,"7 hours/day is the working assumption."
+total_possible_instructional_hours,630,hours,"90 days x 7 hours."
+min_skill_assessments_per_sem,5,count,
+per_skill_assessment_hours,6,hours,
+total_skill_assessment_hours,30,hours,"5 assessments x 6 hours."
+module_quiz_hours_per_week,3,hours,
+total_module_quiz_hours,45,hours,"3 hours x 15 weeks."
+remaining_instructional_hours,555,hours,"630 - 30 skill assessment - 45 module quiz."
+total_instructional_weeks_aicte,15,weeks,"Excluding exams. A semester plan shorter than this is structurally under-planned."
+lecture_practice_hours_possible_per_week,37,hours,"Before buffer."
+buffer_hours,60,hours,"Hours lost to long weekends, unplanned holidays, non-govt holidays. VARIES BY UNIVERSITY."
+effective_lecture_practice_hours_per_week,33,hours,"After buffer. This is the CEILING, not a target - planning at exactly 33 leaves no slack."
+effective_total_hours_budget,495,hours,"555 remaining - 60 buffer. A semester's course hours (session + practice + micro-assessment) should fit inside this."

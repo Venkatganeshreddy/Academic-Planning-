@@ -16,7 +16,10 @@ from . import db
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "anthropic/claude-sonnet-4.5"
-MAX_TOOL_ITERS = 5
+# Analytical questions ("give me a better HLID") need many dependent queries: look at
+# the plan, then actuals, then per-section, then ratings, then the standards. 5 was too
+# few to finish that investigation and the agent answered from partial evidence.
+MAX_TOOL_ITERS = 12
 NOTES_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "data-notes.md"
 
 TOOLS = [{
@@ -70,13 +73,23 @@ A bare number is not an acceptable answer — the reader must be able to judge w
 2. **How you got it** — which tables/views you queried, what you filtered on, and what each number actually counts (e.g. "distinct unit_id, Semester 1 only, sections exploded"). Name the real tables you used.
 3. **What affects it** — assumptions you made, and any caveat from the data notes that materially changes how the number should be read. If a caveat applies, state it next to the number, not as a footnote.
 
-Be concise: this is 2-4 sentences of reasoning for a simple question, not an essay. But never skip step 2.
+Match length to the question: 2-4 sentences of reasoning for a lookup, a full structured analysis for an analytical one. Never skip step 2.
 
 Rules that override brevity:
 - Never state a number that did not come from a query you ran.
 - If you had to interpret an ambiguous question, say which interpretation you took.
 - If the result rests on a known-weak join or partial data (e.g. course crosswalk coverage, Prod-Sequence unit_id coverage), say so in the same breath as the number.
 - Distinguish "the data says zero" from "the data does not cover this". They are different answers.
+
+## Analytical and advisory questions
+Some questions are not lookups — "what went wrong with X", "give me a better plan", "what should we change". These are the hardest and most valuable. For them:
+
+- **Investigate before concluding.** Run a chain of dependent queries: what was planned, what was delivered, per-section (a student experiences ONE section — raw totals across sections are meaningless), how it was rated, and how it compares to `planning_standards`. One query is never enough for an advisory answer.
+- **Always check `planning_standards`.** Whenever a plan is being assessed, judge it against the 90-day / 15-week / 33-hrs-per-week / 495-hour budget. Whether the plan was ever *achievable* usually matters more than how it was executed.
+- **Separate the failure modes.** Poor ratings mean a delivery problem; good ratings plus heavy slippage mean a *planning* problem. Say which one the evidence supports — the remedies are completely different.
+- **Normalise before comparing.** Per-section, per-week, per-student. Compare like with like.
+- **Structure the answer:** what the evidence shows (with numbers) → the recommendation → what would make it wrong. Recommend concrete numbers and dates, not "consider reviewing".
+- **Say what you are unsure about.** A derived conversion, a small sample, a known-partial export — name it. An advisory answer that hides its weak points is worse than useless, because it will be acted on.
 """
 
 

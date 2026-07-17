@@ -25,6 +25,20 @@ is a thing that will produce a confidently wrong answer if ignored.
 | `content_units` | one row per content item | Union of objective/coding/reading. `unit_id` repeats (many questions per unit). |
 | `sessions` | distinct session→unit catalogue | Same unit set as `delivered_sessions`; largely redundant with it. |
 | `universities` | 4 rows | Maps university code (MRV/Yenepoya/SGU/CDU) ↔ `institute_name`. Only these 4 have designed data. |
+| `planning_standards` | 14 rows, key-value | **The AICTE/AOL yardstick every semester plan must be judged against.** See below. |
+
+## `planning_standards` — how to judge whether a plan is sound
+
+Source: the AOL master sheet's "Academic Planning Split". These are the constants NxtWave's own academic planning is supposed to obey. **Use them whenever asked to assess, critique, or improve a plan (HLID, semester plan, course load).** Without them you can only say *what happened*; with them you can say *whether the plan was ever achievable*.
+
+The chain: **90 AICTE working days × 7 hrs = 630 possible hours.** Minus 30 skill-assessment and 45 module-quiz hours = **555**. Minus a **60-hour buffer** (long weekends, unplanned holidays) = **495 effective hours**, spread over **15 instructional weeks** = **33 lecture+practice hours/week**.
+
+How to apply it:
+- **15 instructional weeks is the floor.** A semester plan claiming fewer weeks is structurally under-planned, and every date after it will slip. (MRV's Sem-1 HLID planned 14 weeks; delivery actually took 19.)
+- **33 hrs/week is a ceiling, not a target.** A plan sitting at exactly 33 has consumed its buffer on paper and cannot absorb a single disruption.
+- Sum a plan's `session_hours + practice_hours + micro_assessment_hours` (from `designed_course_plan`) and compare to the **495-hour budget**. Report utilisation as a percentage.
+- The **60-hour buffer varies by university** — it is an assumption, not a fact, and worth stating when it drives a conclusion.
+- Induction and mid/end exams are **excluded** from the 90 days — do not count them against the budget.
 
 ## The `deviation` view
 
