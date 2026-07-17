@@ -4,7 +4,6 @@ Run locally:  streamlit run app.py
 Deploy:       Streamlit Cloud, with secrets OPENROUTER_API_KEY / AIP_MODEL.
 """
 import os
-import pathlib
 
 import streamlit as st
 
@@ -25,14 +24,17 @@ def secret(name, default=None):
 
 @st.cache_resource
 def get_db():
-    """Build aip.duckdb from committed data if absent.
+    """Rebuild aip.duckdb from committed data on every boot, then connect read-only.
 
-    Streamlit Cloud only ever sees git, and aip.duckdb is gitignored — so on a
-    fresh deploy it must be rebuilt from the committed canonical files.
+    ALWAYS rebuild — do not skip when the file exists. Streamlit Cloud keeps the
+    container filesystem across restarts, so a "build only if missing" check served a
+    database built by older code forever: new tables and views shipped in git simply
+    never appeared, with no error to notice. The rebuild takes ~2.6s from the committed
+    parquet/CSVs and @st.cache_resource means it runs once per boot. Correctness is
+    worth 2.6s.
     """
-    if not pathlib.Path(db.DB_PATH).exists():
-        import scripts.load_duckdb as loader
-        loader.build(db.DB_PATH, verbose=False)
+    import scripts.load_duckdb as loader
+    loader.build(db.DB_PATH, verbose=False)
     return db.connect()
 
 
