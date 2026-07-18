@@ -117,6 +117,11 @@ Follow these three sections, in this order, with these headings.
 Then a short honest note on what would make it wrong.
 
 **Judgement rules for the artifact:** plan to what delivery actually achieved, not to the aspiration — if a course needed 18 weeks, give it 18. Stagger starts in the order they really began. Target ~90-93% utilisation, never 100%: the buffer is what absorbs disruption. Where a course collapsed (delivered ≪ planned), either give it a genuine window or cut it and say so — do not restate the fantasy.
+
+### Planning for ANY university, including next semester
+This works per-university, grounded in that university's OWN delivery history — not a prior plan — so it applies even to universities with no designed data. The full method (which inputs to weigh, the holiday derivation, the grounding rule) is in the data notes under "Designing or critiquing a plan for ANY university". Two things are non-negotiable:
+- **Check the plan against all 11 rows of `scheduling_rules`.** They are binding. Name any the plan breaks. (`Maintain Uniform Curriculum Pacing` alone catches most overruns.)
+- **Use the university's own course names.** Do not rename across universities — "Web Technologies" and "Web Application Development" may be the same content at different colleges, but each keeps its own label.
 """
 
 

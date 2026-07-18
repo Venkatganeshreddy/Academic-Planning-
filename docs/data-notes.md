@@ -33,6 +33,7 @@ Summing every row inflates MRV's Sem-1 load from **460 hrs to 593 (+29%)**, turn
 | `sessions` | distinct session→unit catalogue | Same unit set as `delivered_sessions`; largely redundant with it. |
 | `universities` | 4 rows | Maps university code (MRV/Yenepoya/SGU/CDU) ↔ `institute_name`. Only these 4 have designed data. |
 | `planning_standards` | 14 rows, key-value | **The AICTE/AOL yardstick every semester plan must be judged against.** See below. |
+| `scheduling_rules` | 11 rows | **The NIAT rules a valid plan MUST satisfy.** Every produced or reviewed plan is checked against all 11. See "Designing or critiquing a plan" below. |
 
 ## `planning_standards` — how to judge whether a plan is sound
 
@@ -106,6 +107,26 @@ GROUP BY 1 HAVING count(DISTINCT f.session_id) >= 3 ORDER BY 3;
 Good ratings (4+) alongside heavy slippage ⇒ **planning** problem: fix the HLID. Poor ratings ⇒ **delivery** problem: fixing the HLID will not help.
 
 **"How many sections does a university have?"** — `delivered_niat.section_name` for the 4 designed universities; `delivered_sections` (the exploded view) elsewhere, because `delivered_sessions.batch_section_name` is a comma-separated list.
+
+## Designing or critiquing a plan for ANY university
+
+This is the core job. When asked to build, improve, or review an academic plan / prod-sequence / HLID for a university — for the coming semester or an existing draft — follow this method. It works for any university, including ones with no designed data of their own, because it is grounded in that university's *delivery history*, not in a prior plan.
+
+**Treat each university independently.** Universities name the same subject differently (S-VYASA's "Web Technologies" is elsewhere "Web Application Development"; "Problem Solving Using Programming" is "Computer Programming"). Use the university's OWN course names as they appear in its data. Do not map or rename across universities.
+
+**The inputs to weigh, in order:**
+1. **Past delivery & slippage** — how the university's last semesters actually ran. Query `delivered_niat` (or `delivered_sessions`) for that `institute_name`: actual weeks, the weekly load curve, courses that started late, collapse weeks (weeks far below the average session load — usually holidays). This is the strongest evidence; a plan that ignores how delivery really behaved will fail the same way again.
+2. **Past feedback** — `session_feedback_safe` for that institute. Low-rated courses need protection or rework; uniformly high ratings alongside slippage mean the problem is the *plan*, not teaching.
+3. **Holiday / disruption pattern** — derive it: weeks with near-zero sessions in past delivery are lost weeks. Place them into the new plan as NAMED break weeks, not as hidden slack. (MRV lost ~15 October days to an unplanned blackout; the plan pretended teaching was continuous.)
+4. **Recorded issues & hard constraints** — any issues log the user provides, plus student count, infra, and BOS/AICTE constraints if given.
+
+**The rules the plan MUST satisfy** — all 11 rows of `scheduling_rules` are binding. Check the produced or reviewed plan against each and name any it breaks. The ones that catch the most real failures: *Maintain Uniform Curriculum Pacing* (no slow-start-then-cram), *Preserve Prerequisite Learning Order*, *Complete Prerequisites Before Assessments*, *Ensure Sufficient Revision Before Major Exams*.
+
+**The standards it must fit** — `planning_standards`: ≥15 instructional weeks, ≤33 hrs/week, total course hours inside the 495-hour budget, buffer placed as real weeks.
+
+**Then produce the plan** using the "better HLID" output structure above: findings from the university's own history first, then the filled artifact table (its own course names, staggered starts in the order delivery showed they must begin, breaks placed on the derived holidays, ~90-93% utilisation), then the changes and their evidence, then what would make it wrong.
+
+**Grounding rule:** every number must trace to that university's data, the standards, or the rules — or be flagged as an assumption. A plan for a university you have no delivery data for is possible only as a template built from a comparable university, and you must say so.
 
 ## How to answer
 

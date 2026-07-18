@@ -1,0 +1,12 @@
+rule,category,rule_text
+Avoid Consecutive Video Sessions,engagement,"Do not schedule back-to-back lectures for the same course. Alternate with practice, quizzes, or other activities to maintain engagement."
+Avoid Consecutive Module Quizzes,engagement,"Do not schedule back-to-back module quizzes. Put at least one learning activity (lecture, practice, revision) between two quizzes."
+Validate Lecture Duration,slot_integrity,"If a lecture's actual content is under 30 minutes it must not occupy a 50-minute lecture slot. Flag such schedules as invalid."
+Lecture-to-Practice Gap,retention,"The gap between a lecture and its practice session must not exceed 30 hours, so concepts are reinforced while fresh."
+Protect Academic Assessment Slots,assessment,"Pre-configured Academic Assessment slots are fixed. They cannot be modified, rescheduled, or overridden."
+Protect Skill Assessment Slots,assessment,"Pre-configured Skill Assessment slots are reserved and fixed. They cannot be modified, rescheduled, or overridden."
+Ensure Sufficient Revision Before Major Exams,exam_readiness,"Do not schedule new lectures/practice/high-load activities immediately before Mid or End exams. Allocate dedicated revision time before every major exam."
+Maintain Uniform Curriculum Pacing,pacing,"Distribute the curriculum evenly across the semester. Avoid slow early weeks followed by excessive load at the end. (This is the failure mode behind most overruns.)"
+Preserve Prerequisite Learning Order,sequencing,"Do not postpone or compress foundational topics for any reason. Prerequisite technologies must be completed before dependent subjects begin."
+Ensure Timely Availability of Module Quizzes,content_readiness,"Module quizzes must become available immediately after the corresponding content is complete (or within the defined rollout window). Delayed availability is a defect."
+Complete Prerequisites Before Assessments,sequencing,"All prerequisite lectures and practice must be complete before scheduling the corresponding Module Quiz, Skill Assessment, or Academic Assessment."

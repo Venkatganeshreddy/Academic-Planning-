@@ -88,6 +88,14 @@ def deviation_scoped_to_designed_unis():
     assert rows[0][0] == 0, f"{rows[0][0]} deviation rows with no university — view is leaking institutes"
 
 
+def planning_knowledge_present():
+    """The agent's planning ability depends on these two reference tables existing."""
+    _, r1, _ = db.run_sql("SELECT count(*) FROM scheduling_rules", con)
+    assert r1[0][0] == 11, f"expected 11 scheduling rules, got {r1[0][0]}"
+    _, r2, _ = db.run_sql("SELECT count(*) FROM planning_standards", con)
+    assert r2[0][0] >= 14, f"planning_standards missing rows: {r2[0][0]}"
+
+
 def feedback_safe_hides_comments():
     cols, _, _ = db.run_sql("SELECT * FROM session_feedback_safe LIMIT 1", con)
     leaked = [c for c in cols if "feedbacks" in c.lower() and c != "total_feedbacks"]
@@ -119,6 +127,7 @@ check("plan_vs_actual surfaces delivered-but-unplanned courses", plan_vs_actual_
 check("delivered timestamps are plausible", timestamps_are_real)
 check("deviation planned_start within 2025-26", planned_start_sane)
 check("deviation covers only designed universities", deviation_scoped_to_designed_unis)
+check("scheduling_rules + planning_standards present", planning_knowledge_present)
 check("session_feedback_safe excludes comment text", feedback_safe_hides_comments)
 
 con.close()
