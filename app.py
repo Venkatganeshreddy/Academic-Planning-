@@ -128,15 +128,10 @@ with st.sidebar:
     )
     MODEL = TIER_MODEL[tier]
     name_slot.markdown(f"**Model** &nbsp; `{MODEL}`")
-    st.caption(TIER_NOTE[tier])
-    if tier.startswith("Haiku"):
-        st.caption("⚠️ Fine for lookups, weaker on multi-step analysis — "
-                   "slide to Opus for planning questions.")
-
-    with st.expander("What each model is for"):
-        for name, _model, note in MODEL_TIERS:
-            price, _, purpose = note.partition("·")
-            st.markdown(f"**{name}** — {purpose.strip()}  \n`{price.strip()}` per 1M tokens (in/out)")
+    # Just the price (cost tracking is the point) — no per-model descriptions.
+    price = TIER_NOTE[tier].split("·")[0].strip()
+    warn = "  ·  ⚠️ light on analysis" if tier.startswith("Haiku") else ""
+    st.caption(f"{price} / 1M tokens{warn}")
 
     st.divider()
 

@@ -25,6 +25,7 @@ DEFAULT_MODEL = "anthropic/claude-opus-4.8"
 # headroom to avoid truncating a real investigation. Lookups still finish in 1-2.
 MAX_TOOL_ITERS = 22
 NOTES_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "data-notes.md"
+EXAMPLES_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "examples.md"
 
 TOOLS = [{
     "type": "function",
@@ -46,9 +47,9 @@ TOOLS = [{
 }]
 
 
-def _notes() -> str:
+def _read(path) -> str:
     try:
-        return NOTES_PATH.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8")
     except OSError:
         return ""
 
@@ -62,7 +63,10 @@ You have one tool: `run_sql`, a read-only DuckDB query. Every factual claim you 
 {db.schema_text(con)}
 
 ## Data notes (authoritative — these override any assumption)
-{_notes()}
+{_read(NOTES_PATH)}
+
+## Worked examples — match this standard
+{_read(EXAMPLES_PATH)}
 
 ## How to work
 - Explore with small queries first if you are unsure of values (e.g. `SELECT DISTINCT ...`).
