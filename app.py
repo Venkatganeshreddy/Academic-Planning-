@@ -24,20 +24,41 @@ def secret(name, default=None):
 
 
 @st.cache_resource
-def get_db():
-    """Rebuild aip.duckdb from committed data on every boot, then connect read-only.
+def build_db_once():
+    """Rebuild aip.duckdb from committed data — once per boot.
 
     ALWAYS rebuild — do not skip when the file exists. Streamlit Cloud keeps the
     container filesystem across restarts, so a "build only if missing" check served a
     database built by older code forever. The rebuild takes ~2.6s and @st.cache_resource
-    runs it once per boot.
+    runs it once per boot. Returns only the path — NOT a connection (see below).
     """
     import scripts.load_duckdb as loader
     loader.build(db.DB_PATH, verbose=False)
-    return db.connect()
+    return db.DB_PATH
 
 
-con = get_db()
+build_db_once()
+# A fresh read-only connection PER run, never cached. A single DuckDB connection cached
+# via st.cache_resource is shared across Streamlit's concurrent session threads, and
+# DuckDB connections are NOT thread-safe — concurrent use returns None / raises
+# TypeError on Cloud (never seen with one local session). Multiple read-only connections
+# to the same file are safe and cheap.
+con = db.connect()
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def table_counts():
+    """Table names + row counts, computed once (not 25 queries every rerun) on an
+    isolated connection — the sidebar loop was the main concurrent-access offender."""
+    c = db.connect()
+    try:
+        out = []
+        for (t,) in c.execute("SHOW TABLES").fetchall():
+            row = c.execute(f'SELECT count(*) FROM "{t}"').fetchone()
+            out.append((t, row[0] if row else 0))
+        return out
+    finally:
+        c.close()
 API_KEY = secret("OPENROUTER_API_KEY")
 
 # Light visual polish — Streamlit is templated by default; round the corners, tighten
@@ -73,11 +94,14 @@ DEFAULT_COLLEGE = "S-VYASA"   # fills the {c} slot when no specific college is f
 
 @st.cache_data(show_spinner=False)
 def college_list():
-    """Real colleges with delivery data, for the focus picker."""
-    rows = con.execute("""SELECT institute_name FROM delivered_sessions
-        WHERE institute_name IS NOT NULL
-        GROUP BY 1 HAVING count(*) > 100 ORDER BY 1""").fetchall()
-    return [r[0] for r in rows]
+    """Real colleges with delivery data, for the focus picker. Own connection."""
+    c = db.connect()
+    try:
+        return [r[0] for r in c.execute("""SELECT institute_name FROM delivered_sessions
+            WHERE institute_name IS NOT NULL
+            GROUP BY 1 HAVING count(*) > 100 ORDER BY 1""").fetchall()]
+    finally:
+        c.close()
 
 
 # Starter prompts as templates ({c} = the focused college). Clicking one runs it — the
@@ -154,10 +178,9 @@ with st.sidebar:
 
     st.divider()
 
-    tables = [t for (t,) in con.execute("SHOW TABLES").fetchall()]
-    with st.expander(f"Data ({len(tables)} tables)"):
-        for t in tables:
-            n = con.execute(f'SELECT count(*) FROM "{t}"').fetchone()[0]
+    counts = table_counts()
+    with st.expander(f"Data ({len(counts)} tables)"):
+        for t, n in counts:
             st.write(f"`{t}` — {n:,}")
     if st.button("Clear chat", use_container_width=True):
         st.session_state.msgs = []
