@@ -104,21 +104,22 @@ def college_list():
         c.close()
 
 
-# Starter prompts as templates ({c} = the focused college). Clicking one runs it — the
-# entry point that turns a blank chat box into a copilot people can start with.
+# Starter prompts: (template, sample_college). {c} fills with the focused college, or
+# the per-prompt sample when no college is focused — so the landing shows a MIX of
+# colleges, not the same one everywhere.
 STARTERS = {
     "📋 Plan a semester": [
-        "Design Semester 1 for {c} based on their past delivery and feedback, fixing the issues they had.",
-        "Is {c}'s planned course load within the 495-hour AICTE budget?",
+        ("Design Semester 1 for {c} based on their past delivery and feedback, fixing the issues they had.", "Aurora University"),
+        ("Is {c}'s planned course load within the 495-hour AICTE budget?", "Malla Reddy Vishwavidyapeeth"),
     ],
     "🔍 Diagnose a college": [
-        "What went wrong for {c} in Semester 1? Combine the recorded issues and what the delivery data shows.",
-        "Which {c} courses were delivered late or under-delivered versus plan?",
+        ("What went wrong for {c} in Semester 1? Combine the recorded issues and what the delivery data shows.", "Chaitanya Deemed-to-be University"),
+        ("Which {c} courses were delivered late or under-delivered versus plan?", "S-VYASA"),
     ],
     "📚 Look up the data": [
-        "How many coding questions exist per course?",
-        "Which sessions at {c} rated below 3 for teaching quality?",
-        "Which 5 instructors have the lowest session completion rate?",
+        ("How many coding questions exist per course?", None),
+        ("Which sessions at {c} rated below 3 for teaching quality?", "NIAT Chevella"),
+        ("Which 5 instructors have the lowest session completion rate?", None),
     ],
 }
 
@@ -204,7 +205,9 @@ if not st.session_state.msgs:
                "Planning questions do best on the Opus setting.")
     for group, prompts in STARTERS.items():
         st.markdown(f"**{group}**")
-        filled = [p.format(c=focus_college) for p in prompts]
+        # focused college wins; otherwise each starter shows its own sample college (a mix)
+        filled = [tmpl.format(c=(focus if focus != ALL_COLLEGES else (sample or DEFAULT_COLLEGE)))
+                  for tmpl, sample in prompts]
         cols = st.columns(len(filled))
         for col, prompt in zip(cols, filled):
             if col.button(prompt, key=f"starter::{prompt}", use_container_width=True):
