@@ -140,10 +140,10 @@ with st.sidebar:
     )
     MODEL = TIER_MODEL[tier]
     name_slot.markdown(f"**Model** &nbsp; `{MODEL}`")
-    # Just the price (cost tracking is the point) — no per-model descriptions.
-    price = TIER_NOTE[tier].split("·")[0].strip()
-    warn = "  ·  ⚠️ light on analysis" if tier.startswith("Haiku") else ""
-    st.caption(f"{price} / 1M tokens{warn}")
+    # A one-line legend of what's on the slider — so people know the models without prices.
+    st.caption("Haiku · fast   |   Sonnet · balanced   |   Opus · deepest analysis")
+    if tier.startswith("Haiku"):
+        st.caption("⚠️ Light on multi-step analysis — slide to Opus for planning.")
 
     st.divider()
 
