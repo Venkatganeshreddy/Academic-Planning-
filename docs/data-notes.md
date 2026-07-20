@@ -22,7 +22,7 @@ is a thing that will produce a confidently wrong answer if ignored.
 | `designed_course_plan` | one row per university×course | HLID "Student Journey": planned session counts, hours, start/end timelines. Sem 1 block only. **`is_submodule='True'` rows are components of the course above them — ALWAYS exclude them from any total** (see below). |
 | `deviation` | one row per university×unit | Pre-solved designed↔delivered join. Use this rather than re-deriving it. |
 | `session_link` | one row per delivered_niat session | **The bridge between the two delivery tables.** `delivered_niat` (course + instructor + status) has no session_id/unit_id; `delivered_sessions` (session_id + unit_id + feedback link) has no course/instructor. This LEFT JOINs them on institute + session_title + start-minute, adding `session_id`, `unit_id`, and a `linked` flag (~76% match). Use it to connect a course/instructor session to its scheduling, feedback (by session_id), and content (by unit_id). Unmatched rows have `linked=false` — the gap is real, not hidden. |
-| `academic_plan_derived` | one row per (institute, semester, course) | **Planning-style metrics derived from delivery, for ALL universities** (designed plans exist for only 4). sessions_per_section, teaching_weeks, first/last_session, start_slip_days, pct_completed. This is the universal "plan" layer; `course_plan_vs_actual` is the real *designed* plan for the 4. |
+| `academic_plan_derived` | one row per (institute, semester, course) | **Planning-style metrics derived from delivery, for ALL universities** (designed plans exist for 16). sessions_per_section, teaching_weeks, first/last_session, start_slip_days, pct_completed. This is the universal "plan" layer; `course_plan_vs_actual` is the real *designed* plan for the 16 with HLID/Prod data. |
 | `college_summary` | one row per college | **At-a-glance health per college** — sections, courses, scheduled_sessions, pct_completed, teaching_weeks, first/last_session, avg_understanding, avg_teaching, recorded_issues, has_designed_plan. Use for "how is X doing", "compare colleges", "which college is struggling". Semester 1. |
 | `course_plan_vs_actual` | one row per university×course | **Pre-solved plan-vs-delivery, already per-section.** Use this for any "how did the plan hold up / give me a better plan" question. |
 
@@ -66,7 +66,7 @@ How to apply it:
 
 `planned_start` is explicit only for MRV. For the other three it is **derived** as HLID semester start + (week−1)×7 — see `designed_sequence.planned_start_derived`. Derived dates are week-accurate at best, so treat small drifts (±7 days) as noise for those universities.
 
-The view covers **Semester 1 only** and **only the 4 universities with designed data**. There is no design on file for the other 14 institutes — that is absence of data, not absence of a plan.
+The view covers **Semester 1 only**, for the **16 universities with designed data** (see `universities.designed_data_available='yes'`). The remaining delivered institutes have no design on file — that is absence of data, not absence of a plan. Course names in the HLID often diverge from delivered names (e.g. S-VYASA's "Web Technologies" vs delivered "Web Development"), so a `planned_not_delivered` / `delivered_not_planned` pair is frequently the *same* course under two names, not a real drop/add.
 
 ## Coverage caveats
 

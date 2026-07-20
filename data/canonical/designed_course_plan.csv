@@ -47,3 +47,111 @@ ADYPU,Communicative English Foundation,30.0,20.0,25.0,0.0,2025-08-18,2025-12-03,
 ADYPU,Quantitative Aptitude,31.0,34.0,20.0,7.0,2025-08-18,2025-12-03,12.0,False
 ADYPU,Introduction to Generative AI,7.0,25.0,15.0,0.0,2025-08-18,2025-12-03,12.0,False
 ADYPU,Applied Physics for Data Science,20.0,20.0,5.0,0.0,2025-08-18,2025-12-03,12.0,False
+ANNA,Web Application Development 1,75.0,65.0,35.0,15.0,2025-08-18,2025-12-18,14.0,False
+ANNA,Build Your own Static Website,28.0,,,,,,,True
+ANNA,Build Your own Responsive Website Website,15.0,,,,,,,True
+ANNA,Modern Responsive Web Design,17.0,,,,,,,True
+ANNA,Build Your Own Dynamic Web Application,15.0,,,,,,,True
+ANNA,Programming for problem solving,69.0,54.0,30.0,14.0,2025-08-18,2025-12-18,14.0,False
+ANNA,Mathematics for Computer Science,39.0,30.0,20.0,7.0,2025-08-18,2025-12-18,14.0,False
+ANNA,Communicative English Foundation,30.0,30.0,15.0,4.0,2028-08-19,2025-12-18,14.0,False
+ANNA,Quantitative Aptitude,31.0,30.0,20.0,6.0,2025-08-18,2025-12-18,14.0,False
+ANNA,Introduction to Generative AI,7.0,20.0,15.0,12.0,2028-08-19,2025-12-18,14.0,False
+SVYASA,Web Technologies,75.0,65.0,35.0,15.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Build Your own Static Website,28.0,21.0,12.0,4.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Build Your own Responsive Website Website,15.0,26.0,9.0,4.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Modern Responsive Web Design,17.0,16.0,8.0,4.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Build Your Own Dynamic Web Application,15.0,16.0,9.0,4.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Problem Solving Using Programming I,69.0,54.0,30.0,14.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Engineering Mathematics 1,39.0,30.0,20.0,7.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Basic Tehnical English,30.0,20.0,25.0,0.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Quantitative Aptitude,31.0,34.0,20.0,7.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Introduction to Generative AI,7.0,20.0,7.0,0.0,2025-08-11,2026-01-20,13.0,False
+NRI,Web Application Development 1,75.0,65.0,35.0,15.0,2025-08-22,2025-12-11,14.0,False
+NRI,Build Your own Static Website,28.0,,,,,,,True
+NRI,Build Your own Responsive Website Website,15.0,,,,,,,True
+NRI,Modern Responsive Web Design,17.0,,,,,,,True
+NRI,Build Your Own Dynamic Web Application,15.0,,,,,,,True
+NRI,Programming for problem solving,69.0,54.0,30.0,14.0,2025-08-22,2025-12-11,14.0,False
+NRI,Mathematics for Computer Science,39.0,30.0,20.0,7.0,2025-08-22,2025-12-11,14.0,False
+NRI,Communicative English Foundation,30.0,30.0,15.0,4.0,2025-08-22,2025-12-11,14.0,False
+NRI,Quantitative Aptitude,31.0,30.0,20.0,6.0,2025-08-22,2025-12-11,14.0,False
+NRI,Introduction to Generative AI,7.0,20.0,15.0,12.0,2025-08-22,2025-12-11,14.0,False
+NSRIT,Web Application Development 1,73.0,65.0,35.0,15.0,2025-08-22,2025-12-27,11.0,False
+NSRIT,Build Your own Static Website,26.0,,,,,,,True
+NSRIT,Build Your own Responsive Website Website,15.0,,,,,,,True
+NSRIT,Modern Responsive Web Design,17.0,,,,,,,True
+NSRIT,Build Your Own Dynamic Web Application,15.0,,,,,,,True
+NSRIT,Programming for problem solving,68.0,54.0,30.0,14.0,2025-08-22,2025-12-27,11.0,False
+NSRIT,Mathematics for Computer Science,30.0,30.0,20.0,7.0,2025-08-22,2025-12-27,11.0,False
+NSRIT,Communicative English Foundation,27.0,30.0,13.0,0.0,2025-08-22,2025-12-27,11.0,False
+NSRIT,Quantitative Aptitude,25.0,30.0,20.0,6.0,2025-08-22,2025-12-27,11.0,False
+NSRIT,Introduction to Generative AI,10.0,20.0,13.0,0.0,2025-08-22,2025-12-27,11.0,False
+NSRIT,C Programming,47.0,,,,2025-10-13,,,False
+CHALAPATHY,Web Application Development 1,75.0,65.0,35.0,15.0,,2025-12-08,13.0,False
+CHALAPATHY,Build Your own Static Website,28.0,,,,,2025-12-08,,True
+CHALAPATHY,Build Your own Responsive Website Website,15.0,,,,,2025-12-08,,True
+CHALAPATHY,Modern Responsive Web Design,17.0,,,,,2025-12-08,,True
+CHALAPATHY,Build Your Own Dynamic Web Application,15.0,,,,,2025-12-08,,True
+CHALAPATHY,Programming for problem solving,69.0,54.0,30.0,14.0,,2025-12-08,13.0,False
+CHALAPATHY,Mathematics for Computer Science,39.0,30.0,20.0,7.0,,2025-12-08,13.0,False
+CHALAPATHY,Communicative English Foundation,30.0,30.0,13.0,0.0,,2025-12-08,13.0,False
+CHALAPATHY,Quantitative Aptitude,31.0,30.0,20.0,6.0,,2025-12-08,13.0,False
+CHALAPATHY,Introduction to Generative AI,7.0,20.0,13.0,0.0,,2025-12-08,13.0,False
+CHALAPATHY,C Programming,,25.0,0.0,0.0,,,,False
+NIU,Web Application Development 1,75.0,65.0,35.0,15.0,2025-08-18,2025-11-28,13.0,False
+NIU,Build Your own Static Website,28.0,,,,,,13.0,False
+NIU,Build Your own Responsive Website Website,15.0,,,,,,13.0,False
+NIU,Modern Responsive Web Design,17.0,,,,,,13.0,False
+NIU,Build Your Own Dynamic Web Application,15.0,,,,,,13.0,False
+NIU,Programming for problem solving,69.0,54.0,30.0,14.0,2025-08-18,2025-11-23,13.0,False
+NIU,Mathematics for Computer Science,39.0,30.0,20.0,7.0,2025-08-18,2025-11-01,13.0,False
+NIU,Communicative English Foundation,30.0,30.0,15.0,4.0,2028-08-18,2025-10-27,13.0,False
+NIU,Quantitative Aptitude,31.0,30.0,20.0,6.0,2025-08-18,2025-11-08,13.0,False
+NIU,Introduction to Generative AI,7.0,20.0,15.0,12.0,2025-08-18,2025-10-26,13.0,False
+CRESCENT,Web Application Development 1,73.0,65.0,35.0,15.0,,2025-12-16,12.0,False
+CRESCENT,Build Your own Static Website,26.0,,,,,,12.0,False
+CRESCENT,Build Your own Responsive Website Website,15.0,,,,,,12.0,False
+CRESCENT,Modern Responsive Web Design,17.0,,,,,,12.0,False
+CRESCENT,Build Your Own Dynamic Web Application,15.0,,,,,,12.0,False
+CRESCENT,Programming for problem solving,68.0,54.0,30.0,14.0,,2025-12-16,12.0,False
+CRESCENT,Mathematics for Computer Science,30.0,30.0,20.0,7.0,,2025-12-16,12.0,False
+CRESCENT,Communicative English Foundation,27.0,30.0,13.0,0.0,,2025-12-16,12.0,False
+CRESCENT,Quantitative Aptitude,25.0,34.0,20.0,7.0,,2025-12-16,12.0,False
+CRESCENT,Introduction to Generative AI,10.0,25.0,15.0,0.0,,2025-12-16,12.0,False
+TAKSHASHILA,Web Application Development 1,73.0,79.0,26.0,16.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Build Your own Static Website,26.0,19.0,20.0,4.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Build Your own Responsive Website Website,15.0,16.0,18.0,4.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Modern Responsive Web Design,17.0,13.0,15.0,4.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Build Your Own Dynamic Web Application,15.0,13.0,15.0,4.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Programming for problem solving,68.0,72.0,26.0,15.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Mathematics for Computer Science,30.0,32.0,16.0,7.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Communicative English Foundation,27.0,27.0,14.0,0.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Quantitative Aptitude,25.0,27.0,10.0,7.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Introduction to Generative AI,10.0,10.0,6.0,0.0,2025-09-23,2025-12-24,13.0,False
+AMET,Web Application Development-1,75.0,65.0,35.0,15.0,,2025-12-12,11.0,False
+AMET,Computer Programming,69.0,54.0,30.0,14.0,,2025-12-12,11.0,False
+AMET,Mathematics for Computer Science,39.0,30.0,20.0,7.0,,2025-12-12,11.0,False
+AMET,Quantitative Aptitude,31.0,30.0,20.0,4.0,,2025-12-12,11.0,False
+AMET,Communicative English Foundation,30.0,30.0,12.0,2.0,,2025-12-12,11.0,False
+AMET,Introduction to Generative AI,7.0,20.0,15.0,2.0,,2025-12-12,11.0,False
+VGU,Web Application Development 1,73.0,61.0,68.0,16.0,2025-08-25,2025-12-08,15.0,False
+VGU,Build Your own Static Website,26.0,19.0,20.0,4.0,2025-08-25,2025-12-08,,True
+VGU,Build Your own Responsive Website Website,15.0,16.0,18.0,4.0,2025-08-25,2025-12-08,,True
+VGU,Modern Responsive Web Design,17.0,13.0,15.0,4.0,2025-08-25,2025-12-08,,True
+VGU,Build Your Own Dynamic Web Application,15.0,13.0,15.0,4.0,2025-08-25,2025-12-08,,True
+VGU,Programming for problem solving,68.0,63.0,68.0,15.0,2025-08-25,2025-12-08,15.0,False
+VGU,Mathematics for Computer Science,30.0,30.0,15.0,7.0,2025-08-25,2025-12-08,15.0,False
+VGU,Communicative English Foundation,27.0,27.0,18.0,0.0,2025-08-25,2025-12-08,15.0,False
+VGU,Quantitative Aptitude,25.0,30.0,30.0,7.0,2025-08-25,2025-12-08,15.0,False
+VGU,Introduction to Generative AI,10.0,15.0,15.0,0.0,2025-08-25,2025-12-08,15.0,False
+VGU,Applied Physics,30.0,30.0,30.0,0.0,2025-08-25,2025-12-08,15.0,False
+BITS,Frontend Development,75.0,79.0,47.0,16.0,2025-09-05,2025-02-12,15.0,False
+BITS,Build Your own Static Website,26.0,19.0,20.0,4.0,,2025-02-13,,True
+BITS,Build Your own Responsive Website Website,15.0,16.0,18.0,4.0,,2025-02-14,,True
+BITS,Modern Responsive Web Design,17.0,13.0,15.0,4.0,,2025-02-15,,True
+BITS,Build Your Own Dynamic Web Application,15.0,13.0,15.0,4.0,,2025-02-16,,True
+BITS,Computer Programming,69.0,65.0,39.0,15.0,2025-09-05,2025-02-12,15.0,False
+BITS,Quantitative Aptitude,31.0,34.0,20.0,7.0,2025-09-05,2025-02-12,15.0,False
+BITS,Communicative English Foundation,30.0,20.0,15.0,0.0,2025-09-05,2025-02-12,15.0,False
+BITS,Introduction to Generative AI,7.0,20.0,10.0,0.0,2025-09-05,2025-02-12,15.0,False

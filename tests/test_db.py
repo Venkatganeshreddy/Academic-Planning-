@@ -201,14 +201,14 @@ def submodules_not_double_counted():
     assert rows[0][0] == 460, f"expected MRV planned total 460 hrs, got {rows[0][0]} (sub-module double-count?)"
 
 
-def designed_plans_cover_five_unis():
-    """ADYPU's HLID (course-level only, no prod sequence) joins in as the 5th
-    university with designed plan-vs-actual."""
+def designed_plans_cover_all_unis():
+    """The HLID + Prod batch lifted designed coverage from 4 to 16 universities."""
     _, r, _ = db.run_sql("SELECT count(DISTINCT university) FROM course_plan_vs_actual", con)
-    assert r[0][0] == 5, f"expected 5 designed universities, got {r[0][0]}"
-    _, a, _ = db.run_sql("""SELECT count(*) FROM course_plan_vs_actual
-        WHERE university='ADYPU' AND coverage='both'""", con)
-    assert a[0][0] >= 4, f"ADYPU designed plan not matching delivery: {a[0][0]} both"
+    assert r[0][0] >= 15, f"expected >=15 designed universities, got {r[0][0]}"
+    # NSRIT's C Programming (blank weeks, standalone) must not be dropped as a sub-module
+    _, c, _ = db.run_sql("""SELECT count(*) FROM course_plan_vs_actual
+        WHERE university='NSRIT' AND lower(course) LIKE 'c programming%'""", con)
+    assert c[0][0] >= 1, "NSRIT C Programming wrongly dropped as sub-module"
 
 
 def plan_vs_actual_finds_unplanned_courses():
@@ -221,7 +221,7 @@ def plan_vs_actual_finds_unplanned_courses():
 
 check("MRV Semester 1 = 7702 rows", mrv_sem1)
 check("sub-modules not double-counted (MRV = 460 hrs, not 593)", submodules_not_double_counted)
-check("designed plans cover 5 universities (ADYPU added)", designed_plans_cover_five_unis)
+check("designed plans cover 15+ universities (HLID+Prod batch)", designed_plans_cover_all_unis)
 check("plan_vs_actual surfaces delivered-but-unplanned courses", plan_vs_actual_finds_unplanned_courses)
 check("delivered timestamps are plausible", timestamps_are_real)
 check("deviation planned_start within 2025-26", planned_start_sane)

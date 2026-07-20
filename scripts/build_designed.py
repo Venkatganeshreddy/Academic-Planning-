@@ -24,7 +24,8 @@ RAW = "data/raw/design"
 OUT = "data/canonical"
 os.makedirs(OUT, exist_ok=True)
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-UNIS = ["MRV", "Yenepoya", "SGU", "CDU", "ADYPU"]
+UNIS = ["MRV", "Yenepoya", "SGU", "CDU", "ADYPU", "ANNA", "SVYASA", "NRI", "NSRIT",
+        "CHALAPATHY", "NIU", "CRESCENT", "TAKSHASHILA", "AMET", "VGU", "BITS"]
 
 EPOCH = None  # serials converted via datetime below
 
@@ -46,6 +47,15 @@ def to_f(x):
         return float(str(x).replace(",", ""))
     except (TypeError, ValueError):
         return None
+
+
+def is_wad_component(title):
+    """The Web-App-Dev-1 breakdown rows are the only real sub-modules in this
+    template. Blank weeks_required alone misfires (e.g. NSRIT's C Programming has
+    blank weeks but is a standalone course), so a sub-module must also be one of
+    these WAD component rows."""
+    t = (title or "").lower()
+    return "build your own" in t or "modern responsive web design" in t
 
 
 def week_num(s):
@@ -202,8 +212,9 @@ def extract_hlid(uni, path):
             # parts (28+15+17+15 = 75) as sibling rows. Summing every row double-counts
             # them — which overstated MRV's Sem-1 load as 593 hrs instead of 460 (+29%)
             # and turned a 93%-utilised plan into a fictional 120% overload.
-            # Marker: parents carry weeks_required; sub-modules leave it blank.
-            "is_submodule": weeks is None,
+            # Marker: parents carry weeks_required; sub-modules leave it blank AND
+            # are WAD-1 component rows (blank weeks alone over-flags real courses).
+            "is_submodule": weeks is None and is_wad_component(title),
         })
     return out
 
