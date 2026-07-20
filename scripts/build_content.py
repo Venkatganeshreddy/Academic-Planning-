@@ -61,18 +61,22 @@ def extract(path):
 
     def course_of(rowset):
         for r in rowset:
-            if r.get("Course Name"):
-                return r["Course Name"]
-        return os.path.splitext(os.path.basename(path))[0]
+            if (r.get("Course Name") or "").strip():
+                return r["Course Name"].strip()
+        # fallback: filename minus the "... [Course] Contents" boilerplate
+        stem = os.path.splitext(os.path.basename(path))[0]
+        return re.sub(r"\s*(Course\s*)?Contents?$", "", stem, flags=re.I).strip()
 
     outline = sh.get("Course Outline", (None, []))[1]
     course = course_of(outline)
+    # exports label the grouping "Module Name" or "Topic Name" depending on the course
+    grp = lambda r: (r.get("Module Name") or r.get("Topic Name") or "").strip()
 
     # reading materials (markdown/text in the outline)
     for r in outline:
         content = (r.get("Reading Material Content") or "").strip()
         if content:
-            recs.append(dict(course=course, module=r.get("Module Name", ""), topic="",
+            recs.append(dict(course=course, module=grp(r), topic=r.get("Topic Name", ""),
                              session_id=r.get("Session ID", ""), session_name=r.get("Session Name", ""),
                              unit_id=r.get("Reading Material id", ""), unit_name="", kind="reading",
                              question_type="", content=content, options="", correct_answer="", code=""))
@@ -83,7 +87,7 @@ def extract(path):
         for r in sh.get(sheet, (None, []))[1]:
             if not (r.get("Content") or "").strip():
                 continue
-            recs.append(dict(course=course, module=r.get("Module Name", ""), topic="",
+            recs.append(dict(course=course, module=grp(r), topic=r.get("Topic Name", ""),
                              session_id=r.get("Session ID", ""), session_name=r.get("Session Name", ""),
                              unit_id=r.get("Unit ID", ""), unit_name=r.get("Unit Name", ""), kind=kind,
                              question_type=r.get("Question_type", ""), content=strip_html(r.get("Content", "")),
@@ -95,7 +99,7 @@ def extract(path):
     for r in sh.get("Coding Practice JSON", (None, []))[1]:
         if not (r.get("Content") or "").strip():
             continue
-        recs.append(dict(course=course, module=r.get("Module Name", ""), topic="",
+        recs.append(dict(course=course, module=grp(r), topic=r.get("Topic Name", ""),
                          session_id=r.get("Session ID", ""), session_name=r.get("Session Name", ""),
                          unit_id=r.get("Unit ID", ""), unit_name=r.get("Unit Name", ""), kind="coding",
                          question_type="", content=strip_html(r.get("Content", "")), options="",
