@@ -165,6 +165,17 @@ def build(db="data/aip.duckdb", verbose=True):
         LEFT JOIN universities u2 ON u2.institute_name = act.institute_name
         WHERE coalesce(plan.university, u2.code) IS NOT NULL""")
 
+    # content_all: ONE inventory across both content systems. Content lives in two
+    # places — the older catalogue tables (reading_materials/objective_questions/
+    # coding_questions, ~15 courses) and the newer course_content (ingested exports).
+    # An eval showed the agent checked only one and wrongly reported content "missing".
+    # This view is the single answer to "what content exists / which courses / how much".
+    con.execute("""CREATE VIEW content_all AS
+        SELECT course_title AS course, 'reading'   AS kind, unit_id, 'catalogue' AS source FROM reading_materials
+        UNION ALL SELECT course_title, 'objective', unit_id, 'catalogue' FROM objective_questions
+        UNION ALL SELECT course_title, 'coding',    unit_id, 'catalogue' FROM coding_questions
+        UNION ALL SELECT course, kind, unit_id, 'ingested' FROM course_content""")
+
     # college_summary: one row per college — the at-a-glance health view. Powers the
     # copilot's most common questions ("how is X doing", "compare colleges", "which is
     # struggling") so it doesn't reassemble the same 4-table join every time.
