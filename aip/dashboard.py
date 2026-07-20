@@ -4,6 +4,8 @@ Everything the pages need in common: secrets, the DuckDB build/connection patter
 table counts, the OpenRouter account lookup, and CSS. Extracted from the original
 single-page app.py so Chat / Knowledge Base / Pipeline can all reuse it.
 """
+import glob
+import hashlib
 import os
 import tempfile
 
@@ -23,20 +25,32 @@ def secret(name, default=None):
     return os.environ.get(name, default)
 
 
-@st.cache_resource
-def db_path():
-    """Build the DB once per boot into a PROCESS-UNIQUE path, and return it.
+def _data_fingerprint():
+    """A cheap hash of the committed data files. Changes whenever a deploy pulls new
+    CSVs/parquet — which is what must trigger a rebuild."""
+    parts = []
+    for f in sorted(glob.glob("data/canonical/*") + ["data/courses.csv"]):
+        if os.path.isfile(f):
+            parts.append(f"{os.path.basename(f)}:{os.path.getsize(f)}:{os.path.getmtime(f):.0f}")
+    return hashlib.md5("|".join(parts).encode()).hexdigest()[:12]
 
-    Do NOT rebuild a shared data/aip.duckdb in place. DuckDB holds a file lock, so
-    rebuilding (a write) while any read-only connection is open — or when a prior crash
-    left a stale lock/WAL file — raises ConnectionException. A fresh per-process path has
-    no prior file, no lock to fight, and multiple read-only readers can share it safely.
-    Rebuilds every boot (~2.6s), so a new deploy never serves stale data.
+
+@st.cache_resource(show_spinner="Building the data store…")
+def _build_db(fingerprint):
+    """Build the DB into a path keyed by the DATA fingerprint. Because the cache key is
+    the fingerprint, a data change forces a rebuild even if Streamlit Cloud keeps the
+    process (and this cache) alive across a deploy — the failure mode where a stale DB,
+    built before a new table existed, kept being served and raised CatalogException.
+    A fresh per-fingerprint path also avoids DuckDB's file-lock / stale-WAL conflicts.
     """
     import scripts.load_duckdb as loader
-    path = os.path.join(tempfile.gettempdir(), f"aip_{os.getpid()}.duckdb")
+    path = os.path.join(tempfile.gettempdir(), f"aip_{os.getpid()}_{fingerprint}.duckdb")
     loader.build(path, verbose=False)
     return path
+
+
+def db_path():
+    return _build_db(_data_fingerprint())
 
 
 def conn():
