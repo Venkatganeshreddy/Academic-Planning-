@@ -171,7 +171,8 @@ def render():
                  tagged AS (SELECT DISTINCT university_course FROM subject_tags
                             WHERE institute_name=? AND semester=?)
             SELECT (SELECT count(*) FROM courses) c,
-                   (SELECT count(*) FROM courses WHERE course_title IN (SELECT university_course FROM tagged)) t
+                   (SELECT count(*) FROM courses WHERE lower(trim(course_title))
+                        IN (SELECT lower(trim(university_course)) FROM tagged)) t
             """, [uni, sem, uni, sem]).fetchone()
         link = con.execute("""SELECT count(*) FILTER (WHERE is_scheduled),
                 count(*) FILTER (WHERE is_scheduled AND linked),
@@ -196,8 +197,12 @@ def render():
             c1, c2 = st.columns([1, 3])
             c1.metric(label, f"{_flag(p)} {p}%")
             c2.caption(detail)
-        st.caption("The Session↔Scheduling bridge is fuzzy (institute + session title + start-minute) "
-                   "because delivered_niat and delivered_sessions share no key — this is the known break.")
+        prec = con.execute("""SELECT link_precision, count(*) FROM session_link
+            WHERE institute_name=? AND semester=? AND is_scheduled GROUP BY 1""", [uni, sem]).fetchall()
+        pm = {p: n for p, n in prec}
+        st.caption(f"Bridge confidence — same time (high): {pm.get('minute', 0):,} · "
+                   f"same day (fallback): {pm.get('day', 0):,} · unmatched: {pm.get('none', 0):,}. "
+                   "delivered_niat and delivered_sessions share no key; this is the known break.")
 
     # 5) FEEDBACK
     with tabs[4]:

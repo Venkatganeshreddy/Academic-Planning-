@@ -222,23 +222,34 @@ def build(db="data/aip.duckdb", verbose=True):
     # Bridge on institute + session_title + start-minute (~76% match). `linked` flags it,
     # so the break stays visible rather than silently dropping rows.
     con.execute("""CREATE VIEW session_link AS
-        WITH s AS (
+        WITH smin AS (
             SELECT institute_name, lower(trim(session_title)) AS tkey,
                    date_trunc('minute', start_ts) AS tmin,
                    any_value(session_id) AS session_id, any_value(unit_id) AS unit_id,
                    any_value(resource_type) AS resource_type
-            FROM delivered_sessions WHERE session_title IS NOT NULL
-            GROUP BY 1, 2, 3
-        )
+            FROM delivered_sessions WHERE session_title IS NOT NULL GROUP BY 1, 2, 3),
+        sday AS (
+            SELECT institute_name, lower(trim(session_title)) AS tkey, start_ts::DATE AS tday,
+                   any_value(session_id) AS session_id, any_value(unit_id) AS unit_id,
+                   any_value(resource_type) AS resource_type
+            FROM delivered_sessions WHERE session_title IS NOT NULL GROUP BY 1, 2, 3)
         SELECT n.institute_name, n.semester, n.course_title, n.session_title, n.session_type,
                n.instructor_name, n.instructor_category, n.session_status, n.section_name,
                n.start_ts, n.end_ts, n.is_scheduled,
-               s.session_id, s.unit_id, s.resource_type,
-               (s.session_id IS NOT NULL) AS linked
+               coalesce(sm.session_id, sd.session_id)     AS session_id,
+               coalesce(sm.unit_id, sd.unit_id)           AS unit_id,
+               coalesce(sm.resource_type, sd.resource_type) AS resource_type,
+               (coalesce(sm.session_id, sd.session_id) IS NOT NULL) AS linked,
+               -- 'minute' = same time (high confidence); 'day' = same title+day fallback
+               CASE WHEN sm.session_id IS NOT NULL THEN 'minute'
+                    WHEN sd.session_id IS NOT NULL THEN 'day' ELSE 'none' END AS link_precision
         FROM delivered_niat n
-        LEFT JOIN s ON s.institute_name = n.institute_name
-                   AND s.tkey = lower(trim(n.session_title))
-                   AND s.tmin = date_trunc('minute', n.start_ts)""")
+        LEFT JOIN smin sm ON sm.institute_name = n.institute_name
+                         AND sm.tkey = lower(trim(n.session_title))
+                         AND sm.tmin = date_trunc('minute', n.start_ts)
+        LEFT JOIN sday sd ON sd.institute_name = n.institute_name
+                         AND sd.tkey = lower(trim(n.session_title))
+                         AND sd.tday = n.start_ts::DATE""")
 
     # academic_plan_derived: planning-style metrics from DELIVERY, per
     # (institute, semester, course), for ALL universities — designed plans exist for
