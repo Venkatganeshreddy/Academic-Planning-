@@ -80,6 +80,7 @@ con.execute(f"""COPY (
     {niat_ts('"Session End DateTime"')}   AS end_ts,
     ({niat_ts('"Session Start DateTime"')} IS NOT NULL) AS is_scheduled
   FROM {rd('niat-scheduled-session-details.csv')}
+  WHERE nullif(trim("Institute Name"), '') IS NOT NULL   -- drop trailing empty export rows
 ) TO '{OUT}/delivered_niat.parquet' (FORMAT PARQUET)""")
 
 for t in ["delivered_sessions", "delivered_niat"]:
