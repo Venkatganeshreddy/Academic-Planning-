@@ -10,6 +10,7 @@ is a thing that will produce a confidently wrong answer if ignored.
 - **Course titles do NOT join across layers.** Delivered has ~148 titles, the catalogue has 63, and the names differ. Use `course_crosswalk` (`raw_title` → `catalogue_course_title`, via normalized `course_key`). Only ~50% of delivered session volume maps; the rest have `match_status='unmapped'`. A course-level count taken without the crosswalk is wrong.
 - **There is no Subject entity.** `courses.stack` (11 stacks) is the closest roll-up.
 - **`delivered_niat` cannot be joined to `delivered_sessions`.** It carries no `unit_id` and no `session_id`. Use it standalone for instructor / course-title / session-status questions. Do not invent a join on title+timestamp.
+- **A session's `session_type` is only LECTURE / PRACTICE / EXAM.** "Quiz" is NOT a session type — it is a **content unit** (`delivered_sessions.resource_type='LP_QUIZ'`, or `course_content.kind='classroom_quiz'`), one level below the session (a session holds ~2 units). So "how many quiz *sessions*" is a category error; answer quiz questions from units/content, and lecture/practice/exam counts from `session_type`.
 
 ## Table meanings and grain
 

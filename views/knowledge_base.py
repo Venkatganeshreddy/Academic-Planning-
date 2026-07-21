@@ -16,21 +16,23 @@ digraph chain {
   rankdir=LR; bgcolor="transparent";
   node [shape=box style="rounded,filled" fillcolor="#f5f5f7" fontname="Helvetica" fontsize=10 color="#d0d0d0"];
   edge [fontname="Helvetica" fontsize=8 color="#888"];
-  U [label="University" fillcolor="#ede7f6"];
-  S [label="Semester"];
+  U   [label="University\\n× Semester" fillcolor="#ede7f6"];
   Sub [label="Subject\\n(NxtWave tag)" fillcolor="#e3f2fd"];
-  C [label="Course\\n(local name)" fillcolor="#e3f2fd"];
-  Se [label="Session"];
-  Sch [label="Scheduling\\ndata"];
-  F [label="Student\\nFeedback" fillcolor="#e8f5e9"];
-  I [label="Instructor\\nDelivery" fillcolor="#fff3e0"];
-  U -> S [label="institute_name"];
-  S -> Sub [label="semester"];
+  C   [label="Course\\n(local name)" fillcolor="#e3f2fd"];
+  Se  [label="Session\\nLECTURE · PRACTICE · EXAM"];
+  I   [label="Instructor\\nDelivery" fillcolor="#fff3e0"];
+  Sch [label="Scheduling\\n(delivered_sessions)"];
+  Un  [label="Content unit\\nLP_RESOURCE · LP_QUIZ"];
+  Cont[label="Content\\nreading · quiz · coding" fillcolor="#e3f2fd"];
+  F   [label="Student\\nFeedback" fillcolor="#e8f5e9"];
+  U -> Sub [label="subject_tags"];
   Sub -> C [label="nxtwave_tag"];
   C -> Se [label="course_title"];
-  Se -> Sch [label="session_id·unit_id"];
-  Sch -> F [label="session_id (76% bridge)"];
   Se -> I [label="instructor_name"];
+  Se -> Sch [label="fuzzy bridge · 85%\\n(no shared id)" style=dashed color="#d9534f" fontcolor="#d9534f"];
+  Sch -> Un [label="session_id → unit_id"];
+  Un -> Cont [label="unit_id"];
+  Sch -> F [label="session_id"];
 }
 """
 
@@ -56,14 +58,16 @@ def _flag(pct):
 
 def render():
     st.title("📚 Knowledge Base — Data Lineage")
-    st.caption("The full chain, and how well each link holds. "
-               "University → Semester → Subject → Course → Session → Scheduling → Feedback → Instructor.")
+    st.caption("The full chain, and how well each link holds. University → Subject → Course → "
+               "Session (lecture/practice/exam) + Instructor → [85% fuzzy bridge] → Scheduling → "
+               "Content unit (resource/quiz) → Content, with Feedback on the session.")
     con = dashboard.conn()
 
     try:
         st.graphviz_chart(CHAIN_DOT, width="stretch")
     except Exception:  # noqa: BLE001
-        st.caption("University → Semester → Subject → Course → Session → Scheduling → Feedback → Instructor")
+        st.caption("University → Subject → Course → Session + Instructor → [85% bridge] → "
+                   "Scheduling → Content unit → Content · Feedback")
 
     colleges = [r[0] for r in con.execute(
         "SELECT institute_name FROM college_summary ORDER BY 1").fetchall()]

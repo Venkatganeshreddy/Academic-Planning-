@@ -102,6 +102,31 @@ the data dictionary).
 
 ---
 
+## Data model — the chain (terminology)
+
+Each **layer** and the exact term it maps to. This is the shape the Knowledge Base explorer
+walks, and the vocabulary the docs/UI use consistently.
+
+| Layer | Is / column | Notes |
+|---|---|---|
+| **University** | `institute_name` | scoped by **Semester** |
+| **Subject** | `nxtwave_tag` | the canonical NxtWave subject (via `subject_tags`) |
+| **Course** | `course_title` (local name) | a Subject can map to **1→many** courses at some universities |
+| **Session** | `session_title`, `session_type` = **LECTURE / PRACTICE / EXAM** | the unit of delivery |
+| **Instructor** | `instructor_name` | on the delivery export, same row as the Session |
+| **Scheduling** | `delivered_sessions` (`session_id`, timestamps) | reached from a Session via the **85% fuzzy bridge**, *not* a shared id |
+| **Content unit** | `unit_id` (`resource_type` = **LP_RESOURCE / LP_QUIZ**) | a Session contains **~2** content units (max 14) |
+| **Content** | `course_content.kind` = reading / objective / classroom_quiz / coding | the actual material behind a unit |
+| **Feedback** | `session_feedback` (by `session_id`) | student ratings on the session |
+
+**Two things worth internalising:**
+- **A quiz is a *Content unit*, not a session type.** Sessions are only LECTURE/PRACTICE/EXAM;
+  "quiz" lives one level down (`LP_QUIZ` unit / `classroom_quiz` content).
+- **The Session→Scheduling hop is a fuzzy bridge, not a join key.** The course+instructor export
+  and the schedule+units export share no id; `session_link` reconnects them at ~85%.
+
+---
+
 ## Repo layout
 
 ```
