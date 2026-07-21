@@ -187,6 +187,7 @@ def render():
         designed = con.execute("""
             WITH plan AS (
                 SELECT course, planned_sessions, planned_total_hours, planned_weeks, coverage,
+                       actual_lectures_per_section,
                        course_key_loose(course) AS pk,
                        (SELECT st.nxtwave_tag FROM subject_tags st
                         WHERE st.institute_name=? AND st.semester='Semester 1'
