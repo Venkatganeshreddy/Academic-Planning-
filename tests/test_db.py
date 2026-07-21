@@ -152,6 +152,17 @@ def english_content_ingested_and_mapped():
     assert j[0][0] > 0, "Communicative English Advanced subject not reaching content"
 
 
+def course_key_variant_tolerant():
+    """The alignment match must fold cosmetic name variants together but keep the
+    number distinction (else it silently merges Web App Dev 1 and 2)."""
+    _, m, _ = db.run_sql("""SELECT course_key('Mathematics for Data Science')
+        = course_key('Mathematics for Data Science - I')""", con)
+    assert m[0][0], "course_key should match the Math-for-DS suffix variant"
+    _, n, _ = db.run_sql("""SELECT course_key('Web Application Development 1')
+        = course_key('Web Application Development 2')""", con)
+    assert not n[0][0], "course_key must NOT collapse Web App Dev 1 and 2"
+
+
 def subject_tags_supplement_merged():
     """The supplement adds genuinely-new subjects (later-semester S3 tags) but does
     NOT re-add a subject the base sheet already covers under a different name."""
@@ -231,6 +242,7 @@ check("deviation covers only designed universities", deviation_scoped_to_designe
 check("scheduling_rules + planning_standards present", planning_knowledge_present)
 check("course_content ingested + JSON parsed", course_content_parsed)
 check("subject_tags crosswalk (id-keyed, mapped)", subject_tags_crosswalk)
+check("course_key is variant-tolerant (keeps 1 vs 2)", course_key_variant_tolerant)
 check("subject_tags supplement merged (sheet extension)", subject_tags_supplement_merged)
 check("English content ingested (paged) + mapped to subjects", english_content_ingested_and_mapped)
 check("derived plan excludes non-curriculum noise", derived_plan_excludes_noise)

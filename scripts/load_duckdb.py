@@ -58,6 +58,25 @@ def build(db="data/aip.duckdb", verbose=True):
         AND lower(t) NOT LIKE '%orientation%'
         AND lower(t) NOT LIKE '%foreign language%')""")
 
+    # course_key: a variant-tolerant key so the same course under cosmetically-different
+    # names matches without needing duplicate crosswalk rows. Collapses case, separators,
+    # spacing, and roman/arabic + trailing-1 ("Web App Dev" = "Web App Dev I" = "…1"),
+    # but KEEPS the number distinction ("…1" != "…2"). See the Alignment tab.
+    con.execute(r"""CREATE MACRO course_key(t) AS (
+        regexp_replace(
+          regexp_replace(
+            regexp_replace(
+              regexp_replace(
+                regexp_replace(
+                  regexp_replace(
+                    regexp_replace(lower(trim(t)), '[-:_]', ' ', 'g'),
+                  '\s+iv$', '4'),
+                '\s+iii$', '3'),
+              '\s+ii$', '2'),
+            '\s+i$', '1'),
+          '[^a-z0-9]', '', 'g'),
+        '1$', ''))""")
+
     # content_units: unified view over the three content-item tables.
     con.execute("""CREATE VIEW content_units AS
         SELECT unit_id, course_title, 'objective' AS k FROM objective_questions

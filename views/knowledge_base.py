@@ -213,8 +213,8 @@ def render():
                  tagged AS (SELECT DISTINCT university_course FROM subject_tags
                             WHERE institute_name=? AND semester=?)
             SELECT (SELECT count(*) FROM courses) c,
-                   (SELECT count(*) FROM courses WHERE lower(trim(course_title))
-                        IN (SELECT lower(trim(university_course)) FROM tagged)) t
+                   (SELECT count(*) FROM courses WHERE course_key(course_title)
+                        IN (SELECT course_key(university_course) FROM tagged)) t
             """, [uni, sem, uni, sem]).fetchone()
         link = con.execute("""SELECT count(*) FILTER (WHERE is_scheduled),
                 count(*) FILTER (WHERE is_scheduled AND linked),
