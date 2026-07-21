@@ -179,19 +179,29 @@ def render():
                 "Completion %": r[6]} for r in dp], width="stretch", hide_index=True)
         else:
             st.info("No delivery to derive planning from for this selection.")
-        designed = con.execute("""SELECT course, planned_sessions, actual_lectures_per_section,
-                planned_total_hours, planned_weeks
+        # Only rows that HAVE a designed plan; delivered-but-unplanned rows have empty
+        # planned columns and don't belong under a "Designed plan" heading — summarise them below.
+        designed = con.execute("""SELECT course, planned_sessions, planned_total_hours,
+                planned_weeks, actual_lectures_per_section
             FROM course_plan_vs_actual
             WHERE university IN (SELECT code FROM universities WHERE institute_name=?)
+              AND coverage <> 'delivered_not_planned'
             ORDER BY planned_sessions DESC NULLS LAST""", [uni]).fetchall()
+        unplanned = con.execute("""SELECT count(*) FROM course_plan_vs_actual
+            WHERE university IN (SELECT code FROM universities WHERE institute_name=?)
+              AND coverage = 'delivered_not_planned'""", [uni]).fetchone()[0]
         if designed and sem == "Semester 1":
-            st.markdown("**Designed plan** (HLID/Prod — Semester 1; available for 16 universities). "
-                        "Planned-vs-actual matches on course name, so where this university's HLID "
-                        "names a course differently from delivery it shows as a separate row.")
+            st.markdown("**Designed plan** (HLID — Semester 1). Every row is a planned course; "
+                        "**Delivered** shows whether it was matched to actual delivery.")
             st.dataframe([{
-                "Course": r[0], "Planned sessions": r[1], "Actual/section": r[2],
-                "Planned hrs": r[3], "Planned weeks": r[4]} for r in designed],
+                "Course": r[0], "Planned sessions": r[1], "Planned hrs": r[2],
+                "Planned weeks": r[3],
+                "Delivered": "✓" if r[4] is not None else "not matched"} for r in designed],
                 width="stretch", hide_index=True)
+            if unplanned:
+                st.caption(f"{unplanned} delivered course(s) aren't in this HLID — usually the same "
+                           "course under a different name (e.g. HLID 'Web Technologies' vs delivered "
+                           "'Web Development'). See the Alignment tab for the pairing.")
 
     # 5) ALIGNMENT : how well each link in the chain holds
     with tabs[4]:
