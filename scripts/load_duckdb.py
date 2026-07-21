@@ -35,6 +35,10 @@ def build(db="data/aip.duckdb", verbose=True):
     if ("subject_tags_supplement",) in con.execute("SHOW TABLES").fetchall():
         con.execute("INSERT INTO subject_tags SELECT * FROM subject_tags_supplement")
         con.execute("DROP TABLE subject_tags_supplement")
+    # drop any fully-identical rows (a few slipped into the base sheet)
+    con.execute("CREATE TABLE _st AS SELECT DISTINCT * FROM subject_tags")
+    con.execute("DROP TABLE subject_tags")
+    con.execute("ALTER TABLE _st RENAME TO subject_tags")
 
     # --- views ---
 

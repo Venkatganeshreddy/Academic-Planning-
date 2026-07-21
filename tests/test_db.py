@@ -153,17 +153,19 @@ def english_content_ingested_and_mapped():
 
 
 def subject_tags_supplement_merged():
-    """The sheet extension (later-semester + typo-variant courses) is merged in."""
+    """The supplement adds genuinely-new subjects (later-semester S3 tags) but does
+    NOT re-add a subject the base sheet already covers under a different name."""
     _, r, _ = db.run_sql("SELECT count(*) FROM subject_tags", con)
-    assert r[0][0] > 300, f"supplement not merged — subject_tags only {r[0][0]} rows"
+    assert r[0][0] > 280, f"supplement not merged — subject_tags only {r[0][0]} rows"
     _, daa, _ = db.run_sql("""SELECT count(*) FROM subject_tags
         WHERE nxtwave_tag='Design and Analysis of Algorithms'""", con)
     assert daa[0][0] >= 3, f"new S3 tag missing: {daa[0][0]}"
-    # a typo-variant now maps: "DataBase Management System" -> Database Management Systems
-    _, dbms, _ = db.run_sql("""SELECT count(*) FROM subject_tags
-        WHERE lower(university_course) LIKE '%database management system%'
-          AND nxtwave_tag='Database Management Systems'""", con)
-    assert dbms[0][0] >= 5, f"DBMS variants not mapped: {dbms[0][0]}"
+    # dedup guard: ADYPU's maths subject must appear once, not once per name variant
+    # ("Mathematics for Data Science - I" base + "Mathematics for Data Science" delivered)
+    _, dup, _ = db.run_sql("""SELECT count(*) FROM subject_tags
+        WHERE institute_name='A Dy Patil University' AND semester='Semester 1'
+          AND nxtwave_tag='Mathematics for Computer Science'""", con)
+    assert dup[0][0] == 1, f"ADYPU maths subject duplicated: {dup[0][0]} rows"
 
 
 def subject_tags_crosswalk():

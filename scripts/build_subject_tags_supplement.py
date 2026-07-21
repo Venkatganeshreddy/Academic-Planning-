@@ -103,6 +103,12 @@ def main():
         "SELECT institute_name, any_value(institute_id), any_value(university_short) FROM base GROUP BY 1").fetchall()}
     already = {(r[0], norm(r[1])) for r in con.execute(
         "SELECT institute_name, university_course FROM base").fetchall()}
+    # A subject the base sheet already maps for this institute+semester must NOT be
+    # re-added under a delivered-name variant — that creates near-duplicate rows
+    # (e.g. base "Mathematics for Data Science - I" + delivered "Mathematics for Data
+    # Science" both -> Mathematics for Computer Science). Dedup by covered tag.
+    base_covered = {(r[0], r[1], r[2]) for r in con.execute(
+        "SELECT institute_name, semester, nxtwave_tag FROM base").fetchall()}
 
     rows = con.execute("""SELECT institute_name, semester, course_title, count(*) n
         FROM deliv WHERE is_curriculum(course_title) GROUP BY 1,2,3""").fetchall()
@@ -117,6 +123,8 @@ def main():
         tag = tag_for(course)
         if not tag:
             unmapped.append((inst, sem, course, n))
+            continue
+        if (inst, sem, tag) in base_covered:            # subject already in the base sheet
             continue
         key = (sem, inst, norm(course))
         if key in seen:
