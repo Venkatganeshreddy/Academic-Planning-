@@ -264,25 +264,32 @@ def render():
                          "at all: the two delivery exports cover different scopes (delivered_niat is broader "
                          "than the unit-linked Clickup sessions), or the title differs. Not a bug — a data-scope gap.")
 
-    # 6) FEEDBACK
+    # 6) FEEDBACK — scoped to this semester via session_link (feedback itself has no
+    # semester column; its session_id places it in a semester). IN-subquery avoids the
+    # row duplication a direct join would cause when a session_id fuzzy-matches twice.
     with tabs[5]:
-        agg = con.execute("""SELECT count(*), round(avg(TRY_CAST(session_understanding_rating AS DOUBLE)),2),
+        sem_sessions = """(SELECT DISTINCT session_id FROM session_link
+                           WHERE institute_name=? AND semester=? AND session_id IS NOT NULL)"""
+        agg = con.execute(f"""SELECT count(*), round(avg(TRY_CAST(session_understanding_rating AS DOUBLE)),2),
                 round(avg(TRY_CAST(teaching_quality_rating AS DOUBLE)),2)
-            FROM session_feedback_safe WHERE institute_name=?""", [uni]).fetchone()
+            FROM session_feedback_safe WHERE institute_name=?
+              AND session_id IN {sem_sessions}""", [uni, uni, sem]).fetchone()
         if agg and agg[0]:
             f = st.columns(3)
             f[0].metric("Rated sessions", f"{agg[0]:,}")
             f[1].metric("Avg understanding", agg[1])
             f[2].metric("Avg teaching", agg[2])
-            low = con.execute("""SELECT session_title, teaching_quality_rating, total_feedbacks
+            low = con.execute(f"""SELECT session_title, teaching_quality_rating, total_feedbacks
                 FROM session_feedback_safe WHERE institute_name=?
+                AND session_id IN {sem_sessions}
                 AND TRY_CAST(teaching_quality_rating AS DOUBLE) IS NOT NULL
-                ORDER BY TRY_CAST(teaching_quality_rating AS DOUBLE) LIMIT 10""", [uni]).fetchall()
+                ORDER BY TRY_CAST(teaching_quality_rating AS DOUBLE) LIMIT 10""", [uni, uni, sem]).fetchall()
             st.markdown("**Lowest-rated sessions**")
             st.dataframe([{"Session": r[0], "Teaching": r[1], "Feedbacks": r[2]} for r in low],
                          width="stretch", hide_index=True)
+            st.caption(f"Student feedback for {sem} (placed via the session's scheduling link).")
         else:
-            st.info("No feedback recorded for this university.")
+            st.info(f"No feedback recorded for {uni} in {sem}.")
 
     # 7) ISSUES
     with tabs[6]:
@@ -294,4 +301,7 @@ def render():
                            "Solutioning direction": r[3], "Status": r[4]} for r in issues],
                          width="stretch", hide_index=True)
         else:
-            st.info("No recorded issues (logged mainly for Aurora / MRV / CDU).")
+            covered = [r[0] for r in con.execute(
+                "SELECT DISTINCT institute_name FROM issues WHERE institute_name IS NOT NULL ORDER BY 1").fetchall()]
+            where = ", ".join(covered) if covered else "no universities yet"
+            st.info(f"No issues logged for {uni}. The RCA/issues board currently covers: {where}.")
