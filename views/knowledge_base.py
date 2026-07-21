@@ -91,13 +91,18 @@ def render():
                        count(*) FILTER (WHERE ca.kind='classroom_quiz') AS quiz,
                        count(*) FILTER (WHERE ca.kind='coding')         AS coding
                 FROM tag_content_map tcm JOIN content_all ca ON ca.course = tcm.content_course
-                GROUP BY 1)
-            SELECT st.university_course, st.nxtwave_tag, st.credits,
+                GROUP BY 1),
+            subj AS (   -- one row per subject; several local names can map to one tag,
+                        -- so show the official (course_id-bearing) name as the label
+                SELECT nxtwave_tag,
+                       arg_max(university_course, CASE WHEN coalesce(course_id,'')<>'' THEN 1 ELSE 0 END) AS university_course,
+                       arg_max(coalesce(credits,''), CASE WHEN coalesce(course_id,'')<>'' THEN 1 ELSE 0 END) AS credits
+                FROM subject_tags WHERE institute_name = ? AND semester = ? GROUP BY nxtwave_tag)
+            SELECT subj.university_course, subj.nxtwave_tag, subj.credits,
                    coalesce(tc.readings,0), coalesce(tc.objective,0),
                    coalesce(tc.quiz,0), coalesce(tc.coding,0)
-            FROM subject_tags st LEFT JOIN tc ON tc.nxtwave_tag = st.nxtwave_tag
-            WHERE st.institute_name = ? AND st.semester = ?
-            ORDER BY st.university_course""", [uni, sem]).fetchall()
+            FROM subj LEFT JOIN tc ON tc.nxtwave_tag = subj.nxtwave_tag
+            ORDER BY subj.university_course""", [uni, sem]).fetchall()
         if subs:
             st.markdown("**Their course name → NxtWave subject → content that belongs to it**")
             st.dataframe([{

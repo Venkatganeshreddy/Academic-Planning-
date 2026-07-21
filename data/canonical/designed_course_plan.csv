@@ -13,10 +13,10 @@ MRV,Fundamentals of Quantum Computing,16.0,16.0,8.0,0.0,2025-08-11,2025-12-13,14
 MRV,Computer Aided Engineering Graphics,8.0,8.0,0.0,0.0,2025-08-11,2025-12-13,14.0,False
 MRV,Indian Knowledge System,5.0,5.0,1.0,0.0,2025-08-11,2025-12-13,14.0,False
 Yenepoya,Web Application Development 1,75.0,65.0,35.0,15.0,2025-08-11,2025-12-06,12.0,False
-Yenepoya,Build Your own Static Website,28.0,21.0,12.0,4.0,2025-08-11,2025-12-06,12.0,False
-Yenepoya,Build Your own Responsive Website Website,15.0,26.0,9.0,4.0,2025-08-11,2025-12-06,12.0,False
-Yenepoya,Modern Responsive Web Design,17.0,16.0,8.0,4.0,2025-08-11,2025-12-06,12.0,False
-Yenepoya,Build Your Own Dynamic Web Application,15.0,16.0,9.0,4.0,2025-08-11,2025-12-06,12.0,False
+Yenepoya,Build Your own Static Website,28.0,21.0,12.0,4.0,2025-08-11,2025-12-06,12.0,True
+Yenepoya,Build Your own Responsive Website Website,15.0,26.0,9.0,4.0,2025-08-11,2025-12-06,12.0,True
+Yenepoya,Modern Responsive Web Design,17.0,16.0,8.0,4.0,2025-08-11,2025-12-06,12.0,True
+Yenepoya,Build Your Own Dynamic Web Application,15.0,16.0,9.0,4.0,2025-08-11,2025-12-06,12.0,True
 Yenepoya,Computer Programming,69.0,54.0,30.0,14.0,2025-08-11,2025-12-06,12.0,False
 Yenepoya,Mathematics for Computer Science,39.0,30.0,20.0,7.0,2025-08-11,2025-12-06,12.0,False
 Yenepoya,Communicative English Foundation,30.0,20.0,25.0,0.0,2025-08-11,2025-12-06,12.0,False
@@ -58,10 +58,10 @@ ANNA,Communicative English Foundation,30.0,30.0,15.0,4.0,2028-08-19,2025-12-18,1
 ANNA,Quantitative Aptitude,31.0,30.0,20.0,6.0,2025-08-18,2025-12-18,14.0,False
 ANNA,Introduction to Generative AI,7.0,20.0,15.0,12.0,2028-08-19,2025-12-18,14.0,False
 SVYASA,Web Technologies,75.0,65.0,35.0,15.0,2025-08-11,2026-01-20,13.0,False
-SVYASA,Build Your own Static Website,28.0,21.0,12.0,4.0,2025-08-11,2026-01-20,13.0,False
-SVYASA,Build Your own Responsive Website Website,15.0,26.0,9.0,4.0,2025-08-11,2026-01-20,13.0,False
-SVYASA,Modern Responsive Web Design,17.0,16.0,8.0,4.0,2025-08-11,2026-01-20,13.0,False
-SVYASA,Build Your Own Dynamic Web Application,15.0,16.0,9.0,4.0,2025-08-11,2026-01-20,13.0,False
+SVYASA,Build Your own Static Website,28.0,21.0,12.0,4.0,2025-08-11,2026-01-20,13.0,True
+SVYASA,Build Your own Responsive Website Website,15.0,26.0,9.0,4.0,2025-08-11,2026-01-20,13.0,True
+SVYASA,Modern Responsive Web Design,17.0,16.0,8.0,4.0,2025-08-11,2026-01-20,13.0,True
+SVYASA,Build Your Own Dynamic Web Application,15.0,16.0,9.0,4.0,2025-08-11,2026-01-20,13.0,True
 SVYASA,Problem Solving Using Programming I,69.0,54.0,30.0,14.0,2025-08-11,2026-01-20,13.0,False
 SVYASA,Engineering Mathematics 1,39.0,30.0,20.0,7.0,2025-08-11,2026-01-20,13.0,False
 SVYASA,Basic Tehnical English,30.0,20.0,25.0,0.0,2025-08-11,2026-01-20,13.0,False
@@ -100,30 +100,30 @@ CHALAPATHY,Quantitative Aptitude,31.0,30.0,20.0,6.0,,2025-12-08,13.0,False
 CHALAPATHY,Introduction to Generative AI,7.0,20.0,13.0,0.0,,2025-12-08,13.0,False
 CHALAPATHY,C Programming,,25.0,0.0,0.0,,,,False
 NIU,Web Application Development 1,75.0,65.0,35.0,15.0,2025-08-18,2025-11-28,13.0,False
-NIU,Build Your own Static Website,28.0,,,,,,13.0,False
-NIU,Build Your own Responsive Website Website,15.0,,,,,,13.0,False
-NIU,Modern Responsive Web Design,17.0,,,,,,13.0,False
-NIU,Build Your Own Dynamic Web Application,15.0,,,,,,13.0,False
+NIU,Build Your own Static Website,28.0,,,,,,13.0,True
+NIU,Build Your own Responsive Website Website,15.0,,,,,,13.0,True
+NIU,Modern Responsive Web Design,17.0,,,,,,13.0,True
+NIU,Build Your Own Dynamic Web Application,15.0,,,,,,13.0,True
 NIU,Programming for problem solving,69.0,54.0,30.0,14.0,2025-08-18,2025-11-23,13.0,False
 NIU,Mathematics for Computer Science,39.0,30.0,20.0,7.0,2025-08-18,2025-11-01,13.0,False
 NIU,Communicative English Foundation,30.0,30.0,15.0,4.0,2028-08-18,2025-10-27,13.0,False
 NIU,Quantitative Aptitude,31.0,30.0,20.0,6.0,2025-08-18,2025-11-08,13.0,False
 NIU,Introduction to Generative AI,7.0,20.0,15.0,12.0,2025-08-18,2025-10-26,13.0,False
 CRESCENT,Web Application Development 1,73.0,65.0,35.0,15.0,,2025-12-16,12.0,False
-CRESCENT,Build Your own Static Website,26.0,,,,,,12.0,False
-CRESCENT,Build Your own Responsive Website Website,15.0,,,,,,12.0,False
-CRESCENT,Modern Responsive Web Design,17.0,,,,,,12.0,False
-CRESCENT,Build Your Own Dynamic Web Application,15.0,,,,,,12.0,False
+CRESCENT,Build Your own Static Website,26.0,,,,,,12.0,True
+CRESCENT,Build Your own Responsive Website Website,15.0,,,,,,12.0,True
+CRESCENT,Modern Responsive Web Design,17.0,,,,,,12.0,True
+CRESCENT,Build Your Own Dynamic Web Application,15.0,,,,,,12.0,True
 CRESCENT,Programming for problem solving,68.0,54.0,30.0,14.0,,2025-12-16,12.0,False
 CRESCENT,Mathematics for Computer Science,30.0,30.0,20.0,7.0,,2025-12-16,12.0,False
 CRESCENT,Communicative English Foundation,27.0,30.0,13.0,0.0,,2025-12-16,12.0,False
 CRESCENT,Quantitative Aptitude,25.0,34.0,20.0,7.0,,2025-12-16,12.0,False
 CRESCENT,Introduction to Generative AI,10.0,25.0,15.0,0.0,,2025-12-16,12.0,False
 TAKSHASHILA,Web Application Development 1,73.0,79.0,26.0,16.0,2025-09-23,2025-12-24,13.0,False
-TAKSHASHILA,Build Your own Static Website,26.0,19.0,20.0,4.0,2025-09-23,2025-12-24,13.0,False
-TAKSHASHILA,Build Your own Responsive Website Website,15.0,16.0,18.0,4.0,2025-09-23,2025-12-24,13.0,False
-TAKSHASHILA,Modern Responsive Web Design,17.0,13.0,15.0,4.0,2025-09-23,2025-12-24,13.0,False
-TAKSHASHILA,Build Your Own Dynamic Web Application,15.0,13.0,15.0,4.0,2025-09-23,2025-12-24,13.0,False
+TAKSHASHILA,Build Your own Static Website,26.0,19.0,20.0,4.0,2025-09-23,2025-12-24,13.0,True
+TAKSHASHILA,Build Your own Responsive Website Website,15.0,16.0,18.0,4.0,2025-09-23,2025-12-24,13.0,True
+TAKSHASHILA,Modern Responsive Web Design,17.0,13.0,15.0,4.0,2025-09-23,2025-12-24,13.0,True
+TAKSHASHILA,Build Your Own Dynamic Web Application,15.0,13.0,15.0,4.0,2025-09-23,2025-12-24,13.0,True
 TAKSHASHILA,Programming for problem solving,68.0,72.0,26.0,15.0,2025-09-23,2025-12-24,13.0,False
 TAKSHASHILA,Mathematics for Computer Science,30.0,32.0,16.0,7.0,2025-09-23,2025-12-24,13.0,False
 TAKSHASHILA,Communicative English Foundation,27.0,27.0,14.0,0.0,2025-09-23,2025-12-24,13.0,False

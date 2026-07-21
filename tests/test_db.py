@@ -171,12 +171,18 @@ def subject_tags_supplement_merged():
     _, daa, _ = db.run_sql("""SELECT count(*) FROM subject_tags
         WHERE nxtwave_tag='Design and Analysis of Algorithms'""", con)
     assert daa[0][0] >= 3, f"new S3 tag missing: {daa[0][0]}"
-    # dedup guard: ADYPU's maths subject must appear once, not once per name variant
-    # ("Mathematics for Data Science - I" base + "Mathematics for Data Science" delivered)
-    _, dup, _ = db.run_sql("""SELECT count(*) FROM subject_tags
-        WHERE institute_name='A Dy Patil University' AND semester='Semester 1'
-          AND nxtwave_tag='Mathematics for Computer Science'""", con)
-    assert dup[0][0] == 1, f"ADYPU maths subject duplicated: {dup[0][0]} rows"
+    # surgical dedup: the near-identical delivered variant ("Mathematics for Data Science"
+    # ~ base "…- I") is dropped, so it never shows as a second near-duplicate row.
+    _, near, _ = db.run_sql("""SELECT count(*) FROM subject_tags
+        WHERE institute_name='A Dy Patil University'
+          AND lower(trim(university_course))='mathematics for data science'""", con)
+    assert near[0][0] == 0, f"near-duplicate 'Mathematics for Data Science' not deduped: {near[0][0]}"
+    # HLID plan names are mapped so plan-vs-actual can explain them ("Programming for
+    # problem solving" -> Computer Programming).
+    _, pfs, _ = db.run_sql("""SELECT count(*) FROM subject_tags
+        WHERE lower(university_course) LIKE 'programming for problem%'
+          AND nxtwave_tag='Computer Programming'""", con)
+    assert pfs[0][0] >= 3, f"HLID plan name 'Programming for problem solving' not mapped: {pfs[0][0]}"
 
 
 def subject_tags_crosswalk():

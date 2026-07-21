@@ -212,9 +212,10 @@ def extract_hlid(uni, path):
             # parts (28+15+17+15 = 75) as sibling rows. Summing every row double-counts
             # them — which overstated MRV's Sem-1 load as 593 hrs instead of 460 (+29%)
             # and turned a 93%-utilised plan into a fictional 120% overload.
-            # Marker: parents carry weeks_required; sub-modules leave it blank AND
-            # are WAD-1 component rows (blank weeks alone over-flags real courses).
-            "is_submodule": weeks is None and is_wad_component(title),
+            # A WAD-1 component row is always a sub-module (some HLIDs fill its weeks
+            # cell, some don't) — keying off the component name, not the blank cell,
+            # avoids both double-counting the parts and dropping real courses.
+            "is_submodule": is_wad_component(title),
         })
     return out
 
