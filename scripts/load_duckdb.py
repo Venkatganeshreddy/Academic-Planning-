@@ -58,24 +58,26 @@ def build(db="data/aip.duckdb", verbose=True):
         AND lower(t) NOT LIKE '%orientation%'
         AND lower(t) NOT LIKE '%foreign language%')""")
 
-    # course_key: a variant-tolerant key so the same course under cosmetically-different
-    # names matches without needing duplicate crosswalk rows. Collapses case, separators,
-    # spacing, and roman/arabic + trailing-1 ("Web App Dev" = "Web App Dev I" = "…1"),
-    # but KEEPS the number distinction ("…1" != "…2"). See the Alignment tab.
-    con.execute(r"""CREATE MACRO course_key(t) AS (
+    # Variant-tolerant course keys so the same course under cosmetically-different
+    # names matches without duplicate rows. course_key_loose collapses case, separators,
+    # spacing and roman->arabic ("Web App Dev II" = "…-2"), keeping the number so 1 != 2;
+    # use it with a prefix match (tolerates appended words like "…(Workshop)").
+    # course_key additionally drops a trailing 1 so "Web App Dev" == "Web App Dev 1" under
+    # an EXACT match (the Alignment tab). Don't prefix-match course_key — the strip would
+    # make "…dev" a prefix of "…dev2" and wrongly merge 1 and 2.
+    con.execute(r"""CREATE MACRO course_key_loose(t) AS (
         regexp_replace(
           regexp_replace(
             regexp_replace(
               regexp_replace(
                 regexp_replace(
-                  regexp_replace(
-                    regexp_replace(lower(trim(t)), '[-:_]', ' ', 'g'),
-                  '\s+iv$', '4'),
-                '\s+iii$', '3'),
-              '\s+ii$', '2'),
-            '\s+i$', '1'),
-          '[^a-z0-9]', '', 'g'),
-        '1$', ''))""")
+                  regexp_replace(lower(trim(t)), '[-:_]', ' ', 'g'),
+                '\s+iv$', '4'),
+              '\s+iii$', '3'),
+            '\s+ii$', '2'),
+          '\s+i$', '1'),
+        '[^a-z0-9]', '', 'g'))""")
+    con.execute("CREATE MACRO course_key(t) AS (regexp_replace(course_key_loose(t), '1$', ''))")
 
     # content_units: unified view over the three content-item tables.
     con.execute("""CREATE VIEW content_units AS
@@ -152,7 +154,7 @@ def build(db="data/aip.duckdb", verbose=True):
     con.execute("""CREATE VIEW course_plan_vs_actual AS
         WITH plan AS (
             SELECT p.university, u.institute_name, p.course,
-                   lower(regexp_replace(p.course, '[^A-Za-z0-9]', '', 'g')) AS k,
+                   course_key_loose(p.course) AS k,
                    TRY_CAST(p.sessions_count AS DOUBLE)         AS planned_sessions,
                    TRY_CAST(p.session_hours AS DOUBLE)          AS planned_session_hours,
                    TRY_CAST(p.practice_hours AS DOUBLE)         AS planned_practice_hours,
@@ -174,7 +176,7 @@ def build(db="data/aip.duckdb", verbose=True):
         ),
         act AS (
             SELECT d.institute_name, d.course_title,
-                   lower(regexp_replace(d.course_title, '[^A-Za-z0-9]', '', 'g')) AS k,
+                   course_key_loose(d.course_title) AS k,
                    s.n_sections,
                    round(count(*) FILTER (WHERE d.session_type='LECTURE')  * 1.0 / s.n_sections, 1) AS actual_lectures_per_section,
                    round(count(*) FILTER (WHERE d.session_type='PRACTICE') * 1.0 / s.n_sections, 1) AS actual_practice_per_section,
