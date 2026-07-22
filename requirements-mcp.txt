@@ -1,0 +1,4 @@
+# Deps for the MCP server (mcp_server.py). Kept separate so the Streamlit Cloud
+# deploy (requirements.txt) doesn't pull MCP's transport stack it never uses.
+-r requirements.txt
+mcp>=1.2
