@@ -1,0 +1,16 @@
+# Render Blueprint for the AIP MCP server (remote custom connector).
+# Deploy: push to GitHub, then New > Blueprint on Render and point it at this repo.
+# Connector URL after deploy:  https://<service>.onrender.com/mcp
+services:
+  - type: web
+    name: aip-mcp
+    runtime: python
+    plan: free                      # free tier sleeps after 15 min idle -> cold start
+    pythonVersion: "3.12"           # stable wheels for duckdb/mcp (local 3.14 is too new)
+    # Build the DuckDB store from the committed canonical CSVs (aip.duckdb is gitignored).
+    buildCommand: "pip install -r requirements-mcp.txt && python scripts/load_duckdb.py"
+    startCommand: "python mcp_server.py --http"
+    healthCheckPath: /healthz
+    envVars:
+      - key: AIP_MCP_TOKEN          # Render generates a secret; read it from the dashboard
+        generateValue: true         # and send it as  Authorization: Bearer <token>

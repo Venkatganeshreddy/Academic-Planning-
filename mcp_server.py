@@ -88,6 +88,34 @@ def guide_resource() -> str:
     return _load("data-notes.md", "examples.md")
 
 
+def _with_auth(app, token, health_path="/healthz"):
+    """Pure-ASGI wrapper: unauthenticated /healthz for Render's probe, and a
+    bearer-token gate on everything else when AIP_MCP_TOKEN is set. Written at the
+    ASGI layer (not BaseHTTPMiddleware) so it never buffers MCP's streaming responses."""
+    async def wrapped(scope, receive, send):
+        if scope["type"] != "http":
+            return await app(scope, receive, send)
+        if scope.get("path") == health_path:
+            await send({"type": "http.response.start", "status": 200,
+                        "headers": [(b"content-type", b"text/plain")]})
+            await send({"type": "http.response.body", "body": b"ok"})
+            return
+        if token:
+            headers = dict(scope.get("headers") or [])
+            if headers.get(b"authorization", b"").decode() != f"Bearer {token}":
+                await send({"type": "http.response.start", "status": 401,
+                            "headers": [(b"content-type", b"application/json")]})
+                await send({"type": "http.response.body", "body": b'{"error":"unauthorized"}'})
+                return
+        await app(scope, receive, send)
+    return wrapped
+
+
 if __name__ == "__main__":
-    transport = "streamable-http" if "--http" in sys.argv else "stdio"
-    mcp.run(transport=transport)
+    if "--http" in sys.argv:
+        # Remote connector: bind 0.0.0.0:$PORT for Render; the MCP endpoint is /mcp.
+        import uvicorn
+        app = _with_auth(mcp.streamable_http_app(), os.environ.get("AIP_MCP_TOKEN"))
+        uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "8000")))
+    else:
+        mcp.run(transport="stdio")
