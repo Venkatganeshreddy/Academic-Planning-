@@ -37,7 +37,9 @@ mcp = FastMCP(
         "run_sql() (read-only SELECT/WITH only). guide() also carries the academic-"
         "planning contract: you can generate a 2026-batch HLID + week-by-week academic "
         "calendar when given a start date, end date, and subject list, grounded in the "
-        "university's own delivery history."
+        "university's own delivery history. guide() ALSO carries a second product as "
+        "reference context -- the GRIT 2026-27 programme (skills/Miles/tracks); GRIT has "
+        "no tables, so answer GRIT questions from the guide, not run_sql()."
     ),
 )
 
@@ -58,7 +60,7 @@ def _load(*names):
 def guide() -> str:
     """The join contract, data caveats, and ready-made query recipes. Read this
     FIRST -- it is what stops a plausible-but-wrong join."""
-    return _load("data-notes.md", "examples.md", "planning-method.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md")
 
 
 @mcp.tool()
@@ -93,7 +95,7 @@ def run_sql(query: str) -> str:
 @mcp.resource("aip://guide")
 def guide_resource() -> str:
     """Same content as guide(), for clients that read resources."""
-    return _load("data-notes.md", "examples.md", "planning-method.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md")
 
 
 class _BearerAuth:
