@@ -3,6 +3,12 @@
 Injected verbatim into the agent's prompt, alongside the live schema. Everything here
 is a thing that will produce a confidently wrong answer if ignored.
 
+**Use all the data.** The store has ~29 tables/views across delivery, feedback, content,
+planning, subjects, and issues. Answer from every layer that bears on the question — don't
+report from one table when another adds essential context (e.g. a pacing answer that ignores
+feedback and recorded issues is half an answer). For planning requests, the full output
+contract is in `planning-method.md`.
+
 ## Join-key contract
 
 - **`unit_id` is the universal key.** It links content, delivered, designed, and feedback. Prefer it over anything else.
@@ -112,6 +118,20 @@ Apply the same method to practice (`planned_practice_hours / (planned_sessions o
 
 For a course the old HLID omitted entirely (no planned ratio to scale from), assume ~1 hr/session and flag it as an assumption.
 
+**"Plan a 2026 batch for <UNI>, <start>–<end>, subjects: …"** (new-batch generation — see `planning-method.md` Job B). Resolve, then build:
+```sql
+-- subjects (nxtwave_tag) -> the uni's own course names
+SELECT nxtwave_tag, university_course FROM subject_tags WHERE institute_name = 'Sanjay Ghodawat University' AND nxtwave_tag IN ('Computer Programming','Quantitative Aptitude');
+-- ground in the uni's own history (actual weeks / pacing / late starts)
+SELECT course, sessions_per_section, teaching_weeks, start_slip_days, pct_completed FROM academic_plan_derived WHERE institute_name = 'Sanjay Ghodawat University' AND semester = 'Semester 1';
+SELECT * FROM course_plan_vs_actual WHERE institute_name = 'Sanjay Ghodawat University';
+SELECT * FROM planning_standards;  SELECT * FROM scheduling_rules;
+-- feedback (protect low-rated) + recorded issues
+SELECT institute_name, session_title, session_understanding_rating, teaching_quality_rating FROM session_feedback_safe WHERE institute_name = 'Sanjay Ghodawat University';
+SELECT issue_id, issue_title, solutioning_direction FROM issues WHERE institute_name = 'Sanjay Ghodawat University';
+```
+Then compute the calendar from the dates (available weeks, ≥15 instructional, ≤33 hrs/wk, named breaks, 495h budget) and emit the five sections. If the uni has no history, template from a comparable one (`designed_course_plan`) and say so.
+
 **"Is this a planning problem or a delivery problem?"**
 ```sql
 SELECT ds.course, count(DISTINCT f.session_id) AS rated,
@@ -157,7 +177,7 @@ This is the core job. When asked to build, improve, or review an academic plan /
 
 **The standards it must fit** — `planning_standards`: ≥15 instructional weeks, ≤33 hrs/week, total course hours inside the 495-hour budget, buffer placed as real weeks.
 
-**Then produce the plan** using the "better HLID" output structure above: findings from the university's own history first, then the filled artifact table (its own course names, staggered starts in the order delivery showed they must begin, breaks placed on the derived holidays, ~90-93% utilisation), then the changes and their evidence, then what would make it wrong.
+**Then produce the plan** using the output contract in `planning-method.md` — either the critique/improve format, or (when the ask gives a start date, end date, and subject list) the **new-batch** format: Inputs & grounding → the 2026 HLID table → a week-by-week academic calendar → a layer-by-layer "how it's better" section with an old→new diff → what would make it wrong. Findings from the university's own history first, its own course names, staggered starts in the order delivery showed they must begin, breaks placed on the derived holidays, ~90-93% utilisation.
 
 **Grounding rule:** every number must trace to that university's data, the standards, or the rules — or be flagged as an assumption. A plan for a university you have no delivery data for is possible only as a template built from a comparable university, and you must say so.
 

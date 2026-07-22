@@ -31,6 +31,20 @@ Lead with the single answer (the college + the one number that proves it), then 
 
 ---
 
+**Q: Plan a 2026 batch for S-VYASA, Jan 6 – Apr 25, subjects: Computer Programming, Quantitative Aptitude, Communicative English.**
+
+This is the new-batch job (see `planning-method.md` Job B) — it earns the **full** structure, not a paragraph. The shape (miniature; real answer fills every cell from queries):
+
+1. `## Inputs & grounding` — subject→course map (Computer Programming → S-VYASA's "Problem Solving Using Programming", etc., from `subject_tags`); grounded in S-VYASA's own delivery (`academic_plan_derived` / `course_plan_vs_actual`); window: Jan 6–Apr 25 ≈ 16 weeks, 1 named break → 15 instructional; 495h budget.
+2. `## The 2026 HLID — S-VYASA, Jan 6 – Apr 25` — the artifact table `| Course | Sessions | Session Hrs | Practice Hrs | Micro Assess Hrs | Start | End | Weeks |`, one row per course + totals, sessions grounded in S-VYASA's history, hours by each course's own ratio. Close with utilisation.
+3. `## Week-by-week academic calendar` — `| Week | Dates | Courses running (hrs) | Milestone / Assessment | Break / Notes |`, staggered starts in prerequisite order, the named break week, ≤33 hrs/wk.
+4. `## How it's better — layer by layer` — Subject/Course/Session/Content/Feedback/Planning narrative, then a `| Layer | Previous | 2026 plan | Evidence |` diff (e.g. "Session | peak 41 hrs/wk (Oct cram) | ≤33 hrs/wk | `delivered_niat` weekly load").
+5. `## What would make this wrong` — derived-vs-measured hours, any template assumption, missing data.
+
+> Why this is good: it BUILDS the artifact (HLID + calendar), fitted to the given dates, every number traceable to S-VYASA's data or flagged; and it defends itself layer-by-layer with an old→new diff. A "plan a batch" question earns exactly this.
+
+---
+
 ## The rules these examples encode
 - **Lead with the answer.** First sentence = the number or the name asked for.
 - **Match length to the question.** Lookup → 1-2 lines. Comparison → short + a small table. "Design/diagnose" → the full planning structure. Never pad a small question or truncate a big one.

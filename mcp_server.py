@@ -34,7 +34,10 @@ mcp = FastMCP(
         "planned, delivered, its content, and student feedback) in one DuckDB store. "
         "Call guide() and describe_schema() BEFORE writing SQL -- the join keys are "
         "non-obvious and a naive join gives a confidently wrong answer. Then use "
-        "run_sql() (read-only SELECT/WITH only)."
+        "run_sql() (read-only SELECT/WITH only). guide() also carries the academic-"
+        "planning contract: you can generate a 2026-batch HLID + week-by-week academic "
+        "calendar when given a start date, end date, and subject list, grounded in the "
+        "university's own delivery history."
     ),
 )
 
@@ -55,7 +58,7 @@ def _load(*names):
 def guide() -> str:
     """The join contract, data caveats, and ready-made query recipes. Read this
     FIRST -- it is what stops a plausible-but-wrong join."""
-    return _load("data-notes.md", "examples.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md")
 
 
 @mcp.tool()
@@ -90,7 +93,7 @@ def run_sql(query: str) -> str:
 @mcp.resource("aip://guide")
 def guide_resource() -> str:
     """Same content as guide(), for clients that read resources."""
-    return _load("data-notes.md", "examples.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md")
 
 
 class _BearerAuth:
