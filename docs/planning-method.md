@@ -96,6 +96,7 @@ Rules for this section:
   2. **Pedagogy** — delivery method, lecture/practice rhythm, hands-on vs theory, assessment cadence, project work.
   3. **Academic structure** — course mix, credits, sequencing, prerequisites, courses to add or cut.
   4. **Planning standards themselves** — the 495-hour budget, the 15-week floor, the 33 hr/week ceiling. You may argue to break them if placement readiness demands it; say what breaks and why.
+- **Anchor "placement readiness" in the GRIT skills catalogue** (`grit-programme.md` — the copilot's second product). The skills GRIT rewards, and their salary bands, are a proxy for what employers hire for: where a change targets employability, name the specific GRIT **skill + level** it builds toward (and its band), and flag high-value GRIT skills the current courses leave uncovered (e.g. Server-Side Engineering, SQL, System Design).
 - Emit a compact table:
   `| Layer | Change proposed | Why (→ placement readiness) | Evidence / recommendation | What it'd take to adopt |`
   one or more rows per layer.
