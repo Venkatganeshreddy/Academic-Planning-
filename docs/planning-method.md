@@ -6,7 +6,7 @@ derivation, the grounding rule) lives in the data notes under "Designing or crit
 university"; read it alongside this.
 
 ## "Give me a better X" means BUILD X, not describe how to fix X
-When asked for a better/revised plan, HLID, schedule or sequence, the deliverable is **the artifact itself, filled in, in the same shape as the original** — something the reader can hand to someone else and act on. A list of changes is not the artifact. Every number must trace to evidence (actual delivery, the standards) or be flagged as a judgement call. Never write "TBD" — decide, and say what would change your mind.
+When asked for a better/revised plan, HLID, schedule or sequence, the deliverable is **the artifact itself, filled in, in the same shape as the original** — something the reader can hand to someone else and act on. A list of changes is not the artifact. Every number must trace to evidence (actual delivery, the standards) — **cite its source inline** (table · filter · value, e.g. `26 [course_plan_vs_actual · MRV]`) — or be flagged as a judgement call. Never write "TBD" — decide, and say what would change your mind.
 
 ## Two planning jobs — detect which one you're in
 - **Job A — critique / improve an existing plan** ("give me a better HLID for MRV"): you have a prior HLID/delivery to react to. Use "Output — critique / improve".
@@ -18,6 +18,18 @@ A plan needs five **material inputs**: start date, end date, subject list, semes
 - **Small / derivable inputs are still defaulted-and-flagged, not asked** — a course's hour split, a festival-break date, the buffer size. Decide these and state the assumption.
 - This does not license "TBD". Asking up front is *how* you avoid TBD in the artifact; once the inputs are gathered (or the user says "use your best defaults"), build the plan and flag what you assumed.
 - Canonical case: *"plan for MRV, start July 25"* with no end date and no subjects → ask for the end date and the subject list (or offer to default them from MRV's own Sem-1 history), then build. Don't assume them silently.
+
+## Ground before you plan (evidence-first)
+Before writing any number, **gather the evidence from every layer that bears on the plan** — the same layers a review would fan out across — and let the numbers come from there, not from a template in your head. Pull what's relevant, skip what isn't, and **say when a layer has no data** rather than inventing it:
+1. **History & slippage** — `delivered_niat` / `academic_plan_derived` / `course_plan_vs_actual`: actual weeks, the weekly-load curve, late starts, collapse weeks, per-section session counts. The strongest evidence.
+2. **Feedback** — `session_feedback_safe`: low-rated courses (protect / rework) vs high-rated-with-slippage (a *planning* problem, not a teaching one). Sem 1+2 only.
+3. **Recorded issues** — `issues` for the institute: the RCA the numbers can't show (outages, infra limits, content defects) + each `solutioning_direction`; cite the `issue_id`.
+4. **Content readiness** — `content_all`: a requested subject with **no ingested content** is a delivery risk to flag, not hide. Sem 3/4 have none.
+5. **Faculty load** — `instructor_sessions` / `session_link`: completion rates, over-loaded instructors (low completion may be scheduling, not the instructor).
+6. **Assessment cadence** — `session_type='EXAM'` + `planning_standards`: reserve the skill-assessment (30h) and module-quiz (45h) budget and revision before exams. (Assessment *scores* aren't in the store — cadence yes, results no.)
+7. **Policy** — `planning_standards` (495h / ≥15 wk / ≤33 hr-wk) + all 11 `scheduling_rules`.
+
+Every number in the plan then traces back to one of these — and carries its citation (above). Keep the through-line in view across all layers: the plan exists so the **student actually learns and finishes** (completion, not just coverage) — and GRIT skills/bands are the employability yardstick for any placement-facing call. A change that serves neither isn't an improvement. Be honest about gaps, and **ask** when a material input is missing.
 
 ---
 
@@ -35,7 +47,7 @@ Follow these three sections, in this order, with these headings.
    `| Course | Sessions | Session Hrs | Practice Hrs | Micro Assess Hrs | Start | End | Weeks |`
    one row per course, **including courses the old HLID omitted**, plus a **totals row**. Close with: `Total X hrs of 495 available = Y% utilisation, ~Z hrs/week`.
 
-**3. `## The changes that matter`** — 3–6 numbered changes, each naming the old value → the new value and the evidence forcing it (e.g. "Maths 39→30 sessions: chronically under-delivered at 26/section").
+**3. `## The changes that matter`** — 3–6 numbered changes, each naming old → new value **and the cited number that forces it** (table · filter · value), e.g. "Maths 39→30 sessions: `actual_lectures_per_section = 26` [course_plan_vs_actual · MRV]". A change with no cited number is a suggestion, not a finding.
 
 Then a short honest note on what would make it wrong. **Stop there** — do **not** append the unconstrained view by default; the grounded plan is the deliverable. End with a one-line offer ("Want the unconstrained *what-could-be-better* view?"), and produce it only if the user asks ("unconstrained view", "what could be better", "unruled", or the app's **Unruled** button). Spec: *What could be better — the unconstrained view (both jobs)* below.
 
@@ -91,6 +103,7 @@ The grounded plan (the sections above) is the **default deliverable**. This unco
 
 Rules for this section:
 - It is produced **separately from** the grounded plan (on request) and **never edits its numbers**. It is a bolder, standalone view.
+- **Freedom is not amnesia — never skip the core anchors.** The freedom is to *think beyond* the guidelines, not to ignore the university's reality. Every proposal still stands on, and is reconciled against, the core anchors: its **context / knowledge** (what it is, how it's delivered — `product-context`), its **delivery history** (`delivered_niat` / `academic_plan_derived`), its **feedback** (`session_feedback_safe`), **GRIT** (skills + bands as the employability yardstick), and — the point of all of it — whether the change actually helps the **student learn and finish** (completion / `pct_completed`, not just coverage). Propose *beyond* the data; never *ignore* it. If a core anchor has no data (e.g. Sem 3/4 feedback), **say so**; if a material input is missing, **ask**.
 - It may challenge **all four layers**, including ones the grounded plan treats as fixed:
   1. **Academic plan** — session counts, hours, staggering, the calendar.
   2. **Pedagogy** — delivery method, lecture/practice rhythm, hands-on vs theory, assessment cadence, project work.
@@ -111,7 +124,7 @@ This is where aspiration belongs. Keep it honest by keeping it labelled — the 
 **In the grounded plan**, plan to what delivery actually achieved, not to the aspiration — if a course needed 18 weeks, give it 18. Stagger starts in the order they really began. Target ~90-93% utilisation, never 100%: the buffer is what absorbs disruption. Where a course collapsed (delivered ≪ planned), either give it a genuine window or cut it and say so — do not restate the fantasy. Aspiration is not banned — it belongs in the *What could be better — the unconstrained view* section, clearly labelled `[recommendation]`, never mixed into the grounded numbers.
 
 ## Non-negotiables (both jobs)
-- **Check the plan against all 11 rows of `scheduling_rules`.** They are binding. Name any the plan breaks. (`Maintain Uniform Curriculum Pacing` alone catches most overruns.)
+- **End every plan with a visible `## Rules & standards check`.** A 2–4 line audit — the reviewer step made visible: which of the 11 `scheduling_rules` the plan satisfies and any it **breaks** (name them), plus budget/floor compliance (`X hrs of 495`, `N ≥ 15 instructional weeks`, peak `≤ 33 hrs/wk`). A plan that never shows its check hasn't been checked. (`Maintain Uniform Curriculum Pacing` alone catches most overruns.)
 - **Use the university's own course names.** Do not rename across universities — "Web Technologies" and "Web Application Development" may be the same content at different colleges, but each keeps its own label.
-- **Ground everything.** Every number traces to that university's data, the standards, or the rules — or is flagged as an assumption. A plan for a university with no delivery data is only a template from a comparable one, and you must say so.
+- **Ground everything, with citations.** Every number traces to that university's data, the standards, or the rules — **cited inline** (table · filter · value) — or is flagged as an assumption. A plan for a university with no delivery data is only a template from a comparable one, and you must say so.
 - The full **method** (inputs to weigh, holiday derivation, grounding rule) is in the data notes under "Designing or critiquing a plan for ANY university" — read it.
