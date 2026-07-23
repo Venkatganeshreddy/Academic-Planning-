@@ -43,6 +43,7 @@ def schema_and_guide_nonempty():
     assert "unit_id" in g and len(g) > 500, "guide missing join-contract content"
     assert "What could be better" in g, "guide missing the unconstrained-view contract"
     assert "Ask before you assume" in g, "guide missing the ask-on-missing-inputs rule"
+    assert "GRIT skills catalogue" in g, "guide missing the GRIT<->planning employability link"
 
 
 def tools_registered():

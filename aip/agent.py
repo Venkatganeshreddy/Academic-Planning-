@@ -29,6 +29,7 @@ EXAMPLES_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "examples
 PRODUCT_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "product-context.md"
 PLATFORM_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "platform-student-experience.md"
 PLANNING_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "planning-method.md"
+GRIT_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "grit-programme.md"
 
 TOOLS = [{
     "type": "function",
@@ -112,6 +113,10 @@ Some questions are not lookups — "what went wrong with X", "give me a better p
 
 ## Academic planning — the output contract (BUILD the artifact, both critique and new-batch)
 {_read(PLANNING_PATH)}
+
+## GRIT programme (reference context — a SECOND product; NOT in the database)
+Background on GRIT, NIAT's placement/employability programme: its skills catalogue, levels, Miles and salary bands. There are NO GRIT tables — never `run_sql` for it. Use it to anchor "placement readiness" in the unconstrained view: when recommending an employability change, cite the specific GRIT skill + level (and its band). Answer GRIT questions from here.
+{_read(GRIT_PATH)}
 """
 
 
