@@ -12,3 +12,5 @@ __pycache__/
 .streamlit/secrets.toml
 # local feedback fallback (used when no Sheet is configured); may contain user text
 data/feedback_local.csv
+# saved chat history (local single-user persistence); contains user conversations
+data/chat_history.json
