@@ -1,13 +1,15 @@
 """Chat page — ask the copilot anything about the academic data.
 
-Behaviour unchanged from the original single-page app; only moved into render()
-and wired to aip.dashboard for the shared DB/secret/account helpers.
+Holds MULTIPLE conversations with a ChatGPT-style sidebar history: new chat, a list
+of past chats to reopen, delete. Chats persist to a local file (see aip/history.py) for
+single-user/local runs; on the shared cloud app that's off and history is session-only.
 """
 import datetime
+import uuid
 
 import streamlit as st
 
-from aip import agent, dashboard, export
+from aip import agent, dashboard, export, history
 
 # Cost/capability ladder, cheapest first — the slider order. All support tool-calling.
 # Non-Anthropic tiers route through OpenRouter too; slugs were verified live against the
@@ -47,19 +49,72 @@ STARTERS = {
 }
 
 
+def _new_chat():
+    return {"id": uuid.uuid4().hex, "title": None,
+            "created": datetime.datetime.now().isoformat(timespec="seconds"), "msgs": []}
+
+
+def _title(q):
+    """A short, readable sidebar title from the first question."""
+    t = " ".join((q or "New chat").split())
+    return (t[:40].rstrip() + "…") if len(t) > 40 else t
+
+
 def render():
     con = dashboard.conn()
     api_key = dashboard.secret("OPENROUTER_API_KEY")
 
-    if "msgs" not in st.session_state:
-        st.session_state.msgs = []       # [{role, content}]
+    # Multiple conversations. Load past chats from disk (local persistence), then open a fresh one.
+    if "chats" not in st.session_state:
+        st.session_state.chats = history.load_chats()
+        first = _new_chat()
+        st.session_state.chats.append(first)
+        st.session_state.current_id = first["id"]
     if "pending" not in st.session_state:
-        st.session_state.pending = None  # a starter chip queues a question here
+        st.session_state.pending = None
+
+    def current():
+        for c in st.session_state.chats:
+            if c["id"] == st.session_state.current_id:
+                return c
+        st.session_state.current_id = st.session_state.chats[-1]["id"]
+        return st.session_state.chats[-1]
+
+    def persist():
+        history.save_chats([c for c in st.session_state.chats if c["msgs"]])
+
+    chat = current()
+    msgs = chat["msgs"]
 
     with st.sidebar:
-        # Model picker: ONE collapsed panel — closed by default, showing the current model.
-        # Click to open -> a single radio group of all models; the selected circle fills blue
-        # (theme primaryColor in .streamlit/config.toml). Picking one reruns and re-collapses.
+        # --- Chat history (ChatGPT-style) ---
+        if st.button("➕ New chat", width="stretch"):
+            if msgs:  # only open a fresh one if the current has content (avoids empty clutter)
+                nc = _new_chat()
+                st.session_state.chats.append(nc)
+                st.session_state.current_id = nc["id"]
+            st.rerun()
+        listed = [c for c in st.session_state.chats
+                  if c["msgs"] or c["id"] == st.session_state.current_id]
+        for c in reversed(listed):
+            row = st.columns([5, 1])
+            if row[0].button(c["title"] or "New chat", key=f"chat::{c['id']}", width="stretch",
+                             type="primary" if c["id"] == st.session_state.current_id else "secondary"):
+                st.session_state.current_id = c["id"]
+                st.rerun()
+            if row[1].button("🗑", key=f"del::{c['id']}", help="Delete this chat"):
+                st.session_state.chats = [x for x in st.session_state.chats if x["id"] != c["id"]]
+                if not st.session_state.chats:
+                    st.session_state.chats.append(_new_chat())
+                if st.session_state.current_id == c["id"]:
+                    st.session_state.current_id = st.session_state.chats[-1]["id"]
+                persist()
+                st.rerun()
+        if not history.PERSIST:
+            st.caption("⚠️ Session-only here — history isn't saved on the shared cloud app.")
+        st.divider()
+
+        # --- Model picker: ONE collapsed panel; the selected circle fills blue (config.toml). ---
         configured = dashboard.secret("AIP_MODEL", agent.DEFAULT_MODEL)
         names = [n for n, _, _ in MODEL_TIERS]
         start = next((n for n, m, _ in MODEL_TIERS if m == configured), "Opus 4.8")
@@ -77,10 +132,10 @@ def render():
 
         st.divider()
         st.markdown("**Usage**")
-        session_cost = sum(m.get("cost", 0) for m in st.session_state.msgs if m["role"] == "assistant")
+        chat_cost = sum(m.get("cost", 0) for m in msgs if m["role"] == "assistant")
         acct = dashboard.account(api_key) if api_key else None
         c1, c2 = st.columns(2)
-        c1.metric("This session", f"${session_cost:.3f}")
+        c1.metric("This chat", f"${chat_cost:.3f}")
         if acct and acct.get("usage") is not None:
             c2.metric("Key spent", f"${acct['usage']:.2f}")
             if acct.get("limit"):
@@ -92,10 +147,6 @@ def render():
         else:
             c2.metric("Key spent", "—", help="Add credit / a valid key to see account usage.")
 
-        if st.button("Clear chat", width="stretch"):
-            st.session_state.msgs = []
-            st.rerun()
-
     st.title("🎓 NIAT Learning Copilot")
 
     if not api_key:
@@ -103,8 +154,8 @@ def render():
                  "locally, or to Secrets on Streamlit Cloud.")
         st.stop()
 
-    # Landing: clickable starters, only when the chat is empty.
-    if not st.session_state.msgs:
+    # Landing: clickable starters, only when the current chat is empty.
+    if not msgs:
         st.markdown("#### What can I help you with?")
         st.caption("Pick one to start, or type your own below. "
                    "Planning questions do best on the Opus setting.")
@@ -117,7 +168,7 @@ def render():
                     st.session_state.pending = prompt
                     st.rerun()
 
-    for i, m in enumerate(st.session_state.msgs):
+    for i, m in enumerate(msgs):
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
             if m["role"] == "assistant" and not m["content"].startswith("❌"):
@@ -164,20 +215,23 @@ def render():
     st.session_state.pending = None
 
     if question:
-        st.session_state.msgs.append({"role": "user", "content": question})
-        history = [{"role": m["role"], "content": m["content"]}
-                   for m in st.session_state.msgs[:-1]]
+        msgs.append({"role": "user", "content": question})
+        if chat["title"] is None:
+            chat["title"] = _title(question)
+        history_msgs = [{"role": m["role"], "content": m["content"]}
+                        for m in msgs[:-1]]
         with st.chat_message("user"):
             st.markdown(question)
         spend = {"cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0}
         with st.chat_message("assistant"), st.spinner("Querying the data…"):
             try:
-                text, _, spend = agent.answer(question, history=history, api_key=api_key, model=model, con=con)
+                text, _, spend = agent.answer(question, history=history_msgs, api_key=api_key, model=model, con=con)
             except agent.OpenRouterError as e:
                 text = f"❌ Could not reach the model: {e}"
-        st.session_state.msgs.append({
+        msgs.append({
             "role": "assistant", "content": text, "q": question,
             "cost": spend["cost"], "model": model,
             "tokens": spend["prompt_tokens"] + spend["completion_tokens"],
         })
+        persist()
         st.rerun()
