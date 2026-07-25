@@ -65,7 +65,8 @@ def _load(*names):
 def guide() -> str:
     """The join contract, data caveats, and ready-made query recipes. Read this
     FIRST -- it is what stops a plausible-but-wrong join."""
-    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md",
+                 "grit-skill-course-map.md")
 
 
 @mcp.tool()
@@ -100,7 +101,8 @@ def run_sql(query: str) -> str:
 @mcp.resource("aip://guide")
 def guide_resource() -> str:
     """Same content as guide(), for clients that read resources."""
-    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md",
+                 "grit-skill-course-map.md")
 
 
 class _BearerAuth:

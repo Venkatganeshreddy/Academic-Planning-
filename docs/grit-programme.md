@@ -120,6 +120,9 @@ Gold Miles per level. "Locked" levels open progressively.
 | Human Skills for the AI Era | 10 🔒 | 40 🔒 | — | — | Locked |
 | Quantitative Finance Foundation | 20 🔒 | 80 🔒 | 200 🔒 | — | Locked |
 
+> **Skill → course map.** For which delivered Year-1 courses build each skill/level (and where the gaps are),
+> see [`grit-skill-course-map.md`](grit-skill-course-map.md). **GRIT L1 is the Year-1 readiness benchmark.**
+
 ## 9. Contest formats & score bands
 
 Pattern · duration · band → medal (Gold / Silver / Try-Again). Syllabus + sample questions live in

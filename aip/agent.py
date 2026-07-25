@@ -30,6 +30,7 @@ PRODUCT_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "product-c
 PLATFORM_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "platform-student-experience.md"
 PLANNING_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "planning-method.md"
 GRIT_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "grit-programme.md"
+GRIT_MAP_PATH = pathlib.Path(__file__).resolve().parents[1] / "docs" / "grit-skill-course-map.md"
 
 TOOLS = [{
     "type": "function",
@@ -117,6 +118,10 @@ Some questions are not lookups — "what went wrong with X", "give me a better p
 ## GRIT programme (reference context — a SECOND product; NOT in the database)
 Background on GRIT, NIAT's placement/employability programme: its skills catalogue, levels, Miles and salary bands. There are NO GRIT tables — never `run_sql` for it. Use it to anchor "placement readiness" in the unconstrained view: when recommending an employability change, cite the specific GRIT skill + level (and its band). Answer GRIT questions from here.
 {_read(GRIT_PATH)}
+
+## GRIT skill → Year-1 course map (the job-readiness benchmark, mapped to courses)
+GRIT L1 is the **Year-1 readiness benchmark**. This maps each GRIT skill/level to the delivered Year-1 subjects that build it, with coverage/gap flags. Use it to check whether the curriculum covers a required GRIT L1 skill and to propose a valid Year-1 plan (the gaps are the blockers). It's a PROPOSED draft — flag it as such.
+{_read(GRIT_MAP_PATH)}
 """
 
 
