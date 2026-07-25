@@ -170,12 +170,11 @@ Architecture focus: 1.5 and 2.0; 1.0 legacy-supported.
 
 ### 2.4 GRIT
 
-**Category:** `certification_or_upskilling_product` · **Structure:** `standard_product_structure` · **Container:** `standard_curriculum`
-**Focus:** future · no versions modeled yet
+**GRIT = Global Readiness Immersion Trip** — NIAT's year-long, gamified job-readiness **skill competition** (skills catalogue, Levels L1–L4, Miles, tracks/badges; contest window Feb 2026 → Feb 2027). It is **fully specified in `grit-programme.md`** and mapped to courses in `grit-skill-course-map.md` — those are authoritative; this entry is only the product-catalogue stub.
 
-**Feature flags:** recorded ✅ · live ❌ · ai_tutor ❌ · summary_cheatsheet ❌
+**Category:** `certification_or_upskilling_product` · **Container:** `standard_curriculum`
 
-**Status:** known product family; detailed versioning and delivery metadata still pending.
+**Reference context, not a database product** — there are **no GRIT tables** (never `run_sql` for GRIT). But **GRIT L1 is the Year-1 readiness benchmark** the planning method uses: check curriculum coverage via `courses.stack` → `student_performance` (see `grit-skill-course-map.md`), not via a GRIT table.
 
 ### 2.5 Launchpad
 

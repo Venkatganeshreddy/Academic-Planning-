@@ -44,7 +44,11 @@ mcp = FastMCP(
         "only if the user asks ('unconstrained view' / 'what could be better'). "
         "guide() ALSO carries a second product as "
         "reference context -- the GRIT 2026-27 programme (skills/Miles/tracks); GRIT has "
-        "no tables, so answer GRIT questions from the guide, not run_sql()."
+        "no tables, so answer GRIT questions from the guide, not run_sql(). guide() further "
+        "carries the GRIT skill x level -> course map: GRIT L1 is the Year-1 readiness "
+        "benchmark, and UNLIKE GRIT the `courses` catalogue table IS queryable and bridges "
+        "to student_performance via course_id -- use the map's L1 coverage/gap list to check "
+        "whether a Sem 1-2 plan builds the required GRIT skills."
     ),
 )
 
@@ -63,10 +67,12 @@ def _load(*names):
 
 @mcp.tool()
 def guide() -> str:
-    """The join contract, data caveats, and ready-made query recipes. Read this
-    FIRST -- it is what stops a plausible-but-wrong join."""
-    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md",
-                 "grit-skill-course-map.md")
+    """The join contract, data caveats, ready-made query recipes, the academic-
+    planning output contract, and the GRIT programme + skill x level -> course map.
+    Read this FIRST -- it is what stops a plausible-but-wrong join."""
+    return _load("data-notes.md", "examples.md", "planning-method.md",
+                 "product-context.md", "platform-student-experience.md",
+                 "grit-programme.md", "grit-skill-course-map.md")
 
 
 @mcp.tool()
@@ -101,8 +107,9 @@ def run_sql(query: str) -> str:
 @mcp.resource("aip://guide")
 def guide_resource() -> str:
     """Same content as guide(), for clients that read resources."""
-    return _load("data-notes.md", "examples.md", "planning-method.md", "grit-programme.md",
-                 "grit-skill-course-map.md")
+    return _load("data-notes.md", "examples.md", "planning-method.md",
+                 "product-context.md", "platform-student-experience.md",
+                 "grit-programme.md", "grit-skill-course-map.md")
 
 
 class _BearerAuth:

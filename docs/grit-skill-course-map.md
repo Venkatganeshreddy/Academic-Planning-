@@ -59,7 +59,8 @@ A course is **Delivered** in Year-1 iff it maps to one of the **22 `student_perf
 
 ## 1st-year milestone (target set) — the NIAT 2025 Year-1 curriculum
 Source: **`NIAT 2025 - 1st Year All Subjects Data.xlsx`** (`Sem-1` / `Sem-2 subjects status` tabs; MRV as the
-reference design). The authoritative Year-1 curriculum, by semester, with **credits** and course type:
+reference design — per-university Year-1 subject lists vary). The authoritative Year-1 curriculum, by semester,
+with **credits** and course type:
 
 - **Semester 1:** Computer Programming (5) · Web Application Development 1 (5) · Mathematics for Computer Science
   (3) · Quantitative Aptitude (3) · Communicative English Foundation (2) · Introduction to Generative AI (0,
