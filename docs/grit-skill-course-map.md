@@ -34,16 +34,38 @@ WHERE  replace(course_id,'-','') = replace('25c1a72c-216e-47e1-9bc6-b2f16c66e0ca
 `ingest_status` is a **content-pipeline** flag (is the course's content loaded), **not** "delivered in Year-1."
 A course is **Delivered** in Year-1 iff it maps to one of the **22 `student_performance.subject`s** (below).
 
-## 1st-year milestone (target set)  *(working definition — no authoritative list in the data yet)*
-Which GRIT skills×levels a Year-1 student must clear. **No explicit milestone file exists** in the supplied data
-(`roles-mapping.csv` is empty), so the working default is the **Novice track badges** (`grit-programme.md` §10),
-which the delivered stacks can support:
-- **AI Product Mastery — Novice:** Computational Thinking L1 · CS Fundamentals L1 · Applied Gen AI L1 · UI Engineering L2
-- **AI Systems Mastery — Novice:** Computational Thinking L1 · CS Fundamentals L1 · Applied Gen AI L1 · Quantitative Reasoning L1 · Critical Thinking & Communication L2
+## 1st-year milestone (target set) — the NIAT 2025 Year-1 curriculum
+Source: **`NIAT 2025 - 1st Year All Subjects Data.xlsx`** (`Sem-1` / `Sem-2 subjects status` tabs; MRV as the
+reference design). The authoritative Year-1 curriculum, by semester, with **credits** and course type:
 
-> The stated objective is "**clear all GRIT Level 1**." Read "all" as **all *required* L1** — DS & ML, Data
-> Intelligence, and Physical AI are later-year / other-track stacks with no Year-1 course. The official milestone
-> should confirm the exact required set (and turn the coverage flags below into a hard pass/gap checklist).
+- **Semester 1:** Computer Programming (5) · Web Application Development 1 (5) · Mathematics for Computer Science
+  (3) · Quantitative Aptitude (3) · Communicative English Foundation (2) · Introduction to Generative AI (0,
+  workshop) · Compliance (2).
+- **Semester 2:** Web Application Development 2 (5, Master) · Data Structures (5, Master) · Database Management
+  Systems (4, Master) · Numerical Ability (3, Master) · Communicative English Advanced (2, Master) · Building LLM
+  Applications (0, workshop) · Compliance (0).
+
+**The Year-1 pass set — which GRIT L1 this curriculum targets:**
+
+| Year-1 subject(s) (NIAT 2025) | GRIT skill | Level reached |
+|---|---|---|
+| Computer Programming · Data Structures · Mathematics for Computer Science | Computational Thinking | **L1** ✅ |
+| Web Application Development 1 · Web Application Development 2 | UI Engineering | L1 → **L2** ✅ |
+| Database Management Systems | SQL · CS Fundamentals *(DBMS only)* | **L1** ✅ / 🟡 |
+| Quantitative Aptitude · Numerical Ability | Quantitative Reasoning | **L1** ✅ |
+| Communicative English Foundation · Communicative English Advanced | Critical Thinking & Communication | L1 → **L2** ✅ |
+| Introduction to Generative AI · Building LLM Applications | Applied Gen AI Development | L1 → **L2** ✅ |
+| Compliance | *(not a GRIT skill — compliance/orientation)* | — |
+
+So the NIAT 2025 Year-1 curriculum targets **GRIT L1 for ~6–7 skills** (Computational Thinking, UI Engineering,
+SQL, Quantitative Reasoning, Critical Thinking & Communication, Applied Gen AI) **plus CS Fundamentals L1 partial**
+(DBMS is taught; OS/networking are absent). This maps to the **Novice track badges** (`grit-programme.md` §10) — AI
+Product / AI Systems Mastery Novice. The coverage table below is the **pass/gap checklist against this set**.
+
+> Notes: this is the **designed** curriculum (credits, WAD1/WAD2 as single courses). The **delivered** per-section
+> data is the 22 `student_performance` subjects, which split WAD into component courses (Static/Responsive Website,
+> JS Essentials, React, …) and add standalone **Server-Side** courses (Node JS, Flask, MongoDB) not shown as a
+> credit line here. DS & ML, Data Intelligence, and Physical AI are **not** in Year 1 (later-year / other-track).
 
 ## The map  *(GRIT §8 `Skill | Level` shape + Stack / Catalogue course / Delivered? / Coverage)*
 **L1 = the Year-1 benchmark.** Coverage: ✅ dedicated Year-1 course · 🟡 partial · ⚠️ gap (no Year-1 course) ·
