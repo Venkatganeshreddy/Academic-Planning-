@@ -38,6 +38,7 @@ STARTERS = {
     "🔍 Diagnose a college": [
         ("What went wrong for {c}? Combine the recorded issues and what the delivery data shows.", "Chaitanya Deemed-to-be University"),
         ("Which {c} courses were delivered late or under-delivered versus plan?", "Malla Reddy Vishwavidyapeeth"),
+        ("Which GRIT Level 1 skills are {c}'s students failing, and what are we teaching for them?", "Sanjay Ghodawat University"),
     ],
     "📚 Look up the data": [
         ("How many coding questions exist per course?", None),

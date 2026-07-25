@@ -26,8 +26,11 @@ GRIT skill ─▶ §8 level topics ─▶ courses.stack ─▶ course_title  ─
 > aligned from **§8 Topics-by-level ↔ course outcomes ↔ the prerequisite chain** (method below). The only hard
 > per-course anchor is UI Engineering (2 filled `courses-levels.csv` rows). Treat level cells as a planning aid.
 
-GRIT itself stays **reference context, not a queryable table** — answer GRIT questions from this doc +
-`grit-programme.md`, never `run_sql` for GRIT. The **courses** it points at *are* queryable (recipe below).
+The GRIT **rules** stay reference context — answer "how does GRIT work" from this doc + `grit-programme.md`,
+never `run_sql`. The **courses** it points at are queryable (recipe below), and so are the **contest
+results**: `grit_readiness` / `grit_best` / `grit_vs_delivery`. `grit_vs_delivery` is this map's
+"Delivered Year-1 subject → GRIT skill" index (below) turned into a view — it puts each college's clear
+rate next to the practice performance of the subjects meant to build that skill.
 
 ## How the levels are assigned (the alignment logic)
 1. **Levels are GRIT's, from §8.** A course sits at the level whose **§8 Topics-by-level** its outcomes/contents

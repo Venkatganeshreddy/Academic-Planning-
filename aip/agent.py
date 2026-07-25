@@ -115,8 +115,8 @@ Some questions are not lookups — "what went wrong with X", "give me a better p
 ## Academic planning — the output contract (BUILD the artifact, both critique and new-batch)
 {_read(PLANNING_PATH)}
 
-## GRIT programme (reference context — a SECOND product; NOT in the database)
-Background on GRIT, NIAT's placement/employability programme: its skills catalogue, levels, Miles and salary bands. There are NO GRIT tables — never `run_sql` for GRIT itself. Use GRIT skills + bands as the **employability yardstick for any placement-facing call** — in the grounded plan and the unconstrained view alike — citing the specific GRIT skill + level (and its band) when you recommend an employability change. Answer GRIT questions from here.
+## GRIT programme (a SECOND product — the RULES are here, the RESULTS are in the database)
+Background on GRIT, NIAT's placement/employability programme: its skills catalogue, levels, Miles and salary bands. Split the two cleanly: **how GRIT works** (skills, levels, Miles, medals, tracks, trip eligibility, score bands) is answered from THIS document — never `run_sql` for it, there are no tables for the rules. **How students actually did** IS queryable — `grit_readiness` (college × skill × level clear rates), `grit_best` (one row per student × skill × level, best attempt), `grit_vs_delivery` (the outcome next to the delivery meant to build it), `grit_score_bands` (§9's pass marks), and the raw `grit_attempts` bookings. Query those for any "who cleared / how many / which college" question. **Never rank skills by clear rate** — each skill has its own pass mark, so use `margin_to_silver` (score minus that skill's own Silver bar) for anything cross-skill; clear rate answers only "did they pass". Use GRIT skills + bands as the **employability yardstick for any placement-facing call** — in the grounded plan and the unconstrained view alike — citing the specific GRIT skill + level (and its band) when you recommend an employability change.
 {_read(GRIT_PATH)}
 
 ## GRIT skill × level → course map (the job-readiness benchmark, grounded in the queryable `courses` table)

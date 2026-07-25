@@ -4,10 +4,14 @@ Served via `guide()` alongside the academic-delivery notes. A **second product**
 know: **G.R.I.T — Global Readiness Immersion Trip**, NIAT/NxtWave's year-long gamified skill
 competition whose top performers win a fully sponsored international trip.
 
-**GRIT is reference context, NOT queryable data.** There are **no GRIT tables** in the DuckDB store —
-do not `run_sql` against it. Answer GRIT questions from THIS document. The delivery/planning data
-(`delivered_*`, `course_plan_vs_actual`, …) is a different product (NIAT university delivery) and
-never mixes with GRIT numbers.
+**The rules are here; the results are in the database.** How GRIT *works* — skills, levels, Miles,
+medals, tracks, trip eligibility, §9 score bands — has no tables: answer it from THIS document, never
+`run_sql`. How students *did* is real data: `grit_readiness` (college × skill × level clear rates),
+`grit_best` (one row per student × skill × level, best attempt only), `grit_vs_delivery`, and the raw
+`grit_attempts` bookings. See `data-notes.md § GRIT` for the join contract and the caveats that change
+the numbers (a third of bookings are no-shows; §9 clear thresholds differ per skill, so clear rates are
+**not comparable across skills** — rank skills by `margin_to_silver` instead). §9's bands are themselves
+in the store as `grit_score_bands`, and a test asserts they still match the badges the platform awarded.
 
 **Sources.** Updated from the **"GRIT Program Briefer (2026-27)"** (16 Jul — the official *How GRIT
 works* explainer) over the earlier Master Knowledge Document. **Where they differ the briefer is newer

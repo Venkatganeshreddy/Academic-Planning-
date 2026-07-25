@@ -1,0 +1,18 @@
+skill,level,silver_min,gold_min,pattern,duration_mins
+Computational Thinking,L1,83.33,100.0,Coding,90
+Computational Thinking,L2,75.0,100.0,Coding,90
+UI Engineering,L1,70.0,85.0,MCQs + Coding,90
+UI Engineering,L2,80.0,90.0,MCQs + IDE Coding,90
+CS Fundamentals,L1,85.0,90.0,MCQs,40
+CS Fundamentals,L2,85.0,90.0,MCQs,60
+Applied Gen AI Development,L1,80.0,90.0,MCQs,45
+Applied Gen AI Development,L2,80.0,90.0,MCQs,45
+Critical Thinking & Communication,L1,75.0,95.0,MCQs,40
+Critical Thinking & Communication,L2,80.0,90.0,MCQ,30
+Server-Side Engineering,L1,90.0,95.0,MCQs + Coding,90
+Quantitative Reasoning,L1,75.0,90.0,MCQs,30
+Quantitative Reasoning,L2,80.0,95.0,MCQ,40
+SQL,L1,85.0,90.0,MCQs + Coding,90
+SQL,L2,80.0,90.0,MCQs + Coding,90
+DS & ML,L1,85.0,90.0,MCQs + Coding,90
+Physical AI,L1,70.0,85.0,MCQs + Coding,90

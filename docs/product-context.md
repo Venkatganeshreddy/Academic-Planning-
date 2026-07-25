@@ -174,7 +174,7 @@ Architecture focus: 1.5 and 2.0; 1.0 legacy-supported.
 
 **Category:** `certification_or_upskilling_product` · **Container:** `standard_curriculum`
 
-**Reference context, not a database product** — there are **no GRIT tables** (never `run_sql` for GRIT). But **GRIT L1 is the Year-1 readiness benchmark** the planning method uses: check curriculum coverage via `courses.stack` → `student_performance` (see `grit-skill-course-map.md`), not via a GRIT table.
+**The programme rules are reference context; the contest results are data.** How GRIT works (skills, levels, Miles, tracks, score bands) has no tables — answer it from `grit-programme.md`, never `run_sql`. How students did is queryable: `grit_readiness`, `grit_best`, `grit_vs_delivery`, `grit_attempts`. **GRIT L1 is the Year-1 readiness benchmark** the planning method uses: check curriculum coverage via `courses.stack` → `student_performance` (see `grit-skill-course-map.md`), and check the *outcome* via `grit_readiness`.
 
 ### 2.5 Launchpad
 

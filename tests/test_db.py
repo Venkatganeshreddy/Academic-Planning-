@@ -292,6 +292,81 @@ check("student performance rollups (grain + rates + join)", student_perf_rollups
 check("recorded issues join to institutes", issues_join_to_institutes)
 check("session_feedback_safe excludes comment text", feedback_safe_hides_comments)
 
+
+def grit_best_is_one_row_per_student_skill_level():
+    """The whole point of grit_best: collapse re-attempts to GRIT's own rule (highest
+    counts) so a count is students, not sittings. A duplicate here silently inflates
+    every readiness number."""
+    _, rows, _ = db.run_sql("""SELECT count(*) FROM (
+        SELECT niat_id, skill, level FROM grit_best GROUP BY 1,2,3 HAVING count(*) > 1)""", con)
+    assert rows[0][0] == 0, f"{rows[0][0]} duplicated student x skill x level rows in grit_best"
+
+    # and it must pick the BEST, not just any, attempt
+    _, rows, _ = db.run_sql("""SELECT count(*) FROM grit_best b
+        WHERE EXISTS (SELECT 1 FROM grit_attempts a
+                      WHERE a.niat_id = b.niat_id AND a.skill = b.skill AND a.level = b.level
+                        AND lower(coalesce(a.is_cancelled,'no')) <> 'yes'
+                        AND lower(coalesce(a.is_disqualified,'no')) <> 'yes'
+                        AND a.score_pct > b.score_pct)""", con)
+    assert rows[0][0] == 0, f"{rows[0][0]} grit_best rows are not the student's best attempt"
+
+
+def grit_excludes_noshows_from_scores():
+    """A third of the bookings are no-shows with NO score. If they leaked into the score
+    average as zeros, every readiness number would be roughly halved."""
+    _, rows, _ = db.run_sql(
+        "SELECT count(*) FROM grit_best WHERE NOT attempted AND score_pct IS NOT NULL", con)
+    assert rows[0][0] == 0, "no-show rows carry a score — they'd drag every average down"
+    _, rows, _ = db.run_sql("""SELECT count(*) FROM grit_readiness
+        WHERE cleared_students > attempted_students OR attempted_students > students""", con)
+    assert rows[0][0] == 0, "readiness counts are inconsistent (cleared > sat, or sat > enrolled)"
+
+
+def grit_joins_to_colleges():
+    """college_name matches universities.institute_name verbatim — that join is the only
+    thing connecting GRIT to the academic data. If it silently broke, institute_name would
+    go all-NULL and every delivery comparison would quietly return nothing."""
+    _, rows, _ = db.run_sql(
+        "SELECT count(DISTINCT institute_name) FROM grit_best WHERE institute_name IS NOT NULL", con)
+    assert rows[0][0] >= 14, f"only {rows[0][0]} GRIT colleges resolved to institutes"
+    _, rows, _ = db.run_sql(
+        "SELECT count(*) FROM grit_vs_delivery WHERE subjects_delivered IS NOT NULL", con)
+    assert rows[0][0] > 0, "no GRIT skill bridged to a delivered subject (grit_skill_subject broken)"
+
+
+def grit_score_bands_match_the_data():
+    """grit_score_bands is TRANSCRIBED from grit-programme.md §9, so it can silently go
+    stale when the programme retunes a threshold — and every margin/near-miss number would
+    then be quietly wrong. The export itself is the oracle: the platform awards the badge,
+    so the observed Gold/Silver boundaries must agree with the transcribed bands."""
+    _, rows, _ = db.run_sql(
+        "SELECT count(*) FROM grit_best WHERE attempted AND silver_min IS NULL", con)
+    assert rows[0][0] == 0, f"{rows[0][0]} attempted rows have no published score band"
+
+    _, rows, _ = db.run_sql("""
+        SELECT a.skill, a.level, a.badge, min(a.score_pct), max(a.score_pct),
+               any_value(TRY_CAST(b.silver_min AS DOUBLE)), any_value(TRY_CAST(b.gold_min AS DOUBLE))
+        FROM grit_attempts a
+        JOIN grit_score_bands b ON upper(b.skill) = a.skill AND b.level = a.level
+        WHERE a.score_pct IS NOT NULL
+          AND lower(coalesce(a.is_cancelled,'no')) <> 'yes'
+        GROUP BY 1, 2, 3""", con)
+    for skill, level, badge, lo, hi, silver, gold in rows:
+        where = f"{skill} {level} {badge}"
+        if badge == "GOLD":
+            assert lo >= gold, f"{where}: scored {lo} but Gold starts at {gold}"
+        elif badge == "SILVER":
+            assert lo >= silver, f"{where}: scored {lo} but Silver starts at {silver}"
+            assert hi < gold, f"{where}: scored {hi} which is Gold ({gold})"
+        elif badge == "TRY AGAIN":
+            assert hi < silver, f"{where}: scored {hi} but Silver starts at {silver}"
+
+
+check("grit_best = one best row per student x skill x level", grit_best_is_one_row_per_student_skill_level)
+check("grit score bands agree with awarded badges (§9 not stale)", grit_score_bands_match_the_data)
+check("grit no-shows excluded from scores", grit_excludes_noshows_from_scores)
+check("grit joins to colleges + delivered subjects", grit_joins_to_colleges)
+
 con.close()
 print()
 if fails:

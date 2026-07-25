@@ -20,6 +20,7 @@ STAGES = [
     ("build_subject_tags.py", "1st-Year Subjects sheet (xlsx)",      ["subject_tags"]),
     ("build_subject_tags_supplement.py", "Sheet extension: later-sem + variant courses", ["subject_tags"]),
     ("build_course_crosswalk.py", "Catalogue + delivered names",     ["course_crosswalk"]),
+    ("build_grit.py",        "GRIT contest bookings (csv)",          ["grit_attempts", "grit_skill_subject", "grit_score_bands"]),
     ("(committed reference)", "tag → content-course map",            ["tag_content_map"]),
 ]
 
@@ -32,7 +33,7 @@ digraph pipeline {
   canon [label="Canonical\\nCSV · parquet\\n(committed)" fillcolor="#f5f5f7"];
   duck  [label="load_duckdb.py\\ntables + views" fillcolor="#e3f2fd"];
   agent [label="Copilot agent\\nread-only SQL\\n+ OpenRouter" fillcolor="#e8f5e9"];
-  pages [label="Dashboard\\nChat · Knowledge Base · Pipeline" fillcolor="#ede7f6"];
+  pages [label="Dashboard\\nChat · Knowledge Base · GRIT · Pipeline" fillcolor="#ede7f6"];
   raw -> build -> canon -> duck -> agent -> pages;
   duck -> pages [style=dashed label="direct reads"];
 }

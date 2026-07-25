@@ -16,6 +16,7 @@ contract is in `planning-method.md`.
 - **Student performance joins on `institute_name` + `semester` + `section`, and carries `subject` + `course_id`.** `student_performance` has one row per **(college, semester, section, course)** — 22 `subject` names, 27 `course_id`s (a subject can span several course_ids). `institute_name`/`S-0NN` section match delivery. The `course_id` is the NxtWave course UUID (dash-less): `replace(subject_tags.course_id,'-','')` and `replace(courses.course_ids,'-','')` resolve it — but only for **~60%** of courses, and the resulting `nxtwave_tag` is **sometimes wrong** (e.g. "Building Rest APIs with Flask" → "Building LLM Applications"). So prefer the file's own `subject` as the label; treat `course_id → nxtwave_tag/content` as best-effort enrichment. Aggregate via the rollups (`student_perf_by_subject` / `_by_course` / `_by_section` / `_by_college`) and recompute rates from summed counts (never average a per-row %).
 - **Course titles do NOT join across layers.** Delivered has ~148 titles, the catalogue has 63, and the names differ. Use `course_crosswalk` (`raw_title` → `catalogue_course_title`, via normalized `course_key`). A course-level count taken without the crosswalk is wrong. Coverage: a curated alias table (`match_status='alias'`, from `course_alias.csv`) patches the high-volume title variants and typos, so **~92% of Sem-1 delivered session volume now maps** (was ~50%). What remains `unmapped` is genuine non-curriculum or non-CS content — assessments, orientation ("Introduction to NIAT"), Basic Electronics, Physics/Chemistry — which have no catalogue course by design, not a bug.
 - **There is no Subject entity.** `courses.stack` (11 stacks) is the closest roll-up. **`courses.stack` + `grit-skill-course-map.md` bridge GRIT skills → catalogue courses → delivery:** each GRIT skill maps to **one or more** stacks (a few — e.g. Human Skills for the AI Era — map to none), so it's not a 1:1 lookup; join `courses.course_ids` → `student_performance.course_id` (dash-less, ~60% resolve) to check GRIT-L1 coverage against real student mastery.
+- **GRIT joins on `college_name` = `institute_name`, verbatim.** No crosswalk needed — the contest export uses the exact institute names. Query `grit_readiness` / `grit_best`, never raw `grit_attempts`, for anything score-shaped (see "GRIT contest results" below). There is **no student-level link into the rest of the store**: `niat_id` appears only in GRIT, and everything else stops at section grain — so GRIT↔delivery comparisons are aggregate-to-aggregate.
 - **`delivered_niat` cannot be joined to `delivered_sessions`.** It carries no `unit_id` and no `session_id`. Use it standalone for instructor / course-title / session-status questions. Do not invent a join on title+timestamp.
 - **A session's `session_type` is only LECTURE / PRACTICE / EXAM.** "Quiz" is NOT a session type — it is a **content unit** (`delivered_sessions.resource_type='LP_QUIZ'`, or `course_content.kind='classroom_quiz'`), one level below the session (a session holds ~2 units). So "how many quiz *sessions*" is a category error; answer quiz questions from units/content, and lecture/practice/exam counts from `session_type`.
 
@@ -63,6 +64,12 @@ Summing every row inflates MRV's Sem-1 load from **460 hrs to 593 (+29%)**, turn
 | `student_perf_by_course` | one row per college × semester × subject × **course_id** | The finer 27-course level (a subject can hold several course_ids); same measures. |
 | `student_perf_by_section` | one row per college × semester × section | Per-section MCQ/coding, same measures. |
 | `student_perf_by_college` | one row per college × semester | Rolled to college×semester — use for cross-college comparison ("which college has the best MCQ accuracy / coding completion in Sem 2"). |
+| `grit_attempts` | one row per student per contest **booking** | Raw GRIT contest bookings, Mar–Jul 2026, 49,758 rows / 5,142 students / 19 colleges. **Do not compute scores from this table** — a third of the rows are no-shows and students re-attempt. Use it only when a booking IS the question (turnout, no-shows, proctoring flags, per-contest ops). |
+| `grit_best` | one row per **student × skill × level** | The queryable GRIT result. Applies GRIT's own rule (§7: unlimited attempts, only the highest counts), drops cancelled/disqualified sittings, and adds `institute_name`. `attempted` = they sat it; `cleared` = Gold or Silver. |
+| `grit_readiness` | one row per college × skill × level | **The headline view.** students / attempted / cleared, `cleared_pct` (of everyone enrolled — the milestone number) and `cleared_pct_of_attempted` (of those who sat). L1 is the Year-1 benchmark. |
+| `grit_vs_delivery` | one row per college × skill × level | GRIT outcome next to the practice performance of the Year-1 subjects meant to build that skill (bridge: `grit_skill_subject`). **Correlation, not proof** — see below. |
+| `grit_skill_subject` | 22 rows | GRIT skill → the delivered Year-1 subject that builds it. The queryable copy of `grit-skill-course-map.md`'s reverse index. Join on `student_performance.subject`. |
+| `grit_score_bands` | one row per skill × level | **The pass marks**, from `grit-programme.md` §9: `silver_min` (clears the level), `gold_min`, plus pattern and duration. Join on `upper(skill)`. Without this, cross-skill score comparison is meaningless. Server-Side L2 is "TBU" in §9 and absent here. |
 
 ## `planning_standards` — how to judge whether a plan is sound
 
@@ -89,6 +96,41 @@ How to apply it:
 `planned_start` is explicit only for MRV. For the other three it is **derived** as HLID semester start + (week−1)×7 — see `designed_sequence.planned_start_derived`. Derived dates are week-accurate at best, so treat small drifts (±7 days) as noise for those universities.
 
 The view covers **Semester 1 only**, for the **16 universities with designed data** (see `universities.designed_data_available='yes'`). The remaining delivered institutes have no design on file — that is absence of data, not absence of a plan. Course names in the HLID often diverge from delivered names (e.g. S-VYASA's "Web Technologies" vs delivered "Web Development"), so a `planned_not_delivered` / `delivered_not_planned` pair is frequently the *same* course under two names, not a real drop/add.
+
+## GRIT contest results — the four things that make an answer wrong
+
+GRIT's **rules** live in `grit-programme.md` (never `run_sql` for them); its **results** are the `grit_*`
+tables above. Four caveats, each of which silently changes a number:
+
+1. **Clear rates are NOT comparable across skills — use `margin_to_silver` when you compare skills.**
+   §9 sets a different Silver threshold per skill (Critical Thinking L1 clears at 75%, CS Fundamentals
+   at 85%, Server-Side at 90%), so a low clear rate can mean a hard bar rather than weak students.
+   `grit_score_bands` holds those thresholds (verified against the awarded badges — see the test), and
+   `grit_best.margin_to_silver` = score − that skill's own bar, which **is** on one scale everywhere.
+   It reorders the answer, so it matters: raw clear rates put **CS Fundamentals L1 (4.7%) far below SQL
+   (13.2%)**, but by margin CS Fundamentals students are **−28 points** from clearing and SQL students
+   **−40** — CS Fundamentals is the *closer* cohort. Rank skills by margin; report clear rate for "did
+   they pass". `near_miss_students` (within 10 points, didn't clear) sizes an intervention: 658 students
+   are one push from Applied Gen AI L1.
+2. **A third of bookings are no-shows.** 17,062 rows carry `badge='NOT ATTEMPTED'` with no score at all.
+   `grit_best` keeps them (so `cleared_pct` is honest about the whole cohort) but they never enter a
+   score average. Distinguish the two failure modes: low **attempt_pct** is an ops/turnout problem;
+   low **cleared_pct_of_attempted** is a readiness problem. They need opposite fixes.
+3. **`college_name` = `institute_name` verbatim** — that is the whole join, no crosswalk. But **two
+   GRIT colleges have no academic data in this store**: *Nxtwave Institute of Advanced Technologies*
+   (9,119 rows) and *Aurora University* (4,832) — 28% of bookings. Their `institute_name` is NULL, so
+   any delivery comparison silently excludes them. Say so rather than reporting a partial total.
+   (134 rows have no college at all; the `niat_id` prefix hints at one but is **not unique** —
+   `N25H02` covers both Malla Reddy and NIAT Chevella — so don't backfill from it.)
+4. **`grit_vs_delivery` is correlation, not proof.** The subject→skill bridge is a documented judgement
+   (`grit-skill-course-map.md`), and practice metrics are per *section* while GRIT is per *student* —
+   same cohort, different grain. Use it to raise a question ("SQL is taught here but 4% clear it"),
+   never to assert that delivery caused the outcome.
+
+**Not ingested:** the newer GRIT-app exports (`grit_attempts_results.csv`, `grit_feedback.csv`, Jun–Jul
+2026) have `niat_id` / `name` / `email` **100% NULL**, so they join to no college, course or student.
+They are held back until re-exported with identity. `grit_attempts` already covers the same date window
+*with* identity, so nothing is currently lost.
 
 ## Coverage caveats
 
@@ -181,8 +223,8 @@ This is the core job. When asked to build, improve, or review an academic plan /
 4. **Recorded issues** — query the `issues` table for that `institute_name`. This is the human-logged RCA board, and it is the OTHER half of issue-finding: derive issues from delivery (pacing, slippage, collapse weeks) AND read what people actually recorded. The two are complementary — the recorded log holds problems the numbers cannot show (Cloud IDE outages, n8n failures, Kaggle blocked for 1300 students, infra limits, content defects), each with a `solutioning_direction`. When a recorded issue bears on the plan, cite it (`issue_id`) alongside the derived findings, and fold its solutioning direction into the recommendation. Note coverage: recorded issues currently exist mainly for Aurora / MRV / CDU; absence of recorded issues for a college means none were logged, not that none exist. Plus any hard constraints given (student count, infra, BOS/AICTE).
 5. **Content readiness** — `content_all` for the requested subjects: any with **no ingested content** is a delivery risk to flag (a session can't sit where content isn't ready), not to hide. Sem 3/4 have none.
 6. **Faculty load** — `instructor_sessions` / `session_link`: instructor completion rates and over-load; low completion may be scheduling, not the instructor.
-7. **Assessment cadence** — `session_type='EXAM'` counts + `planning_standards`: reserve the skill-assessment (30h) and module-quiz (45h) budget and leave revision before major exams. Assessment *scores* aren't in the store — cadence yes, results no.
-8. **GRIT L1 coverage (Year-1 / Sem 1-2 batches)** — map the plan's subjects through `courses.stack` to the GRIT skills they build, and flag any **required GRIT L1** the curriculum does not cover (`grit-skill-course-map.md`). The named Year-1 blocker is **CS Fundamentals L1 (OS/networking)**; System Design / DS & ML / Data Intelligence / Physical AI are gaps. This is the employability-readiness check on the plan — GRIT has no tables, so read coverage via `courses` → `student_performance`, never `run_sql` on GRIT.
+7. **Assessment cadence** — `session_type='EXAM'` counts + `planning_standards`: reserve the skill-assessment (30h) and module-quiz (45h) budget and leave revision before major exams. In-course assessment *scores* aren't in the store — cadence yes, results no. (GRIT contest scores ARE — see below.)
+8. **GRIT L1 coverage (Year-1 / Sem 1-2 batches)** — two halves, and a plan should use both. **Designed coverage:** map the plan's subjects through `courses.stack` to the GRIT skills they build, and flag any **required GRIT L1** the curriculum does not cover (`grit-skill-course-map.md`). The named Year-1 blocker is **CS Fundamentals L1 (OS/networking)**; System Design / DS & ML / Data Intelligence / Physical AI are gaps. **Actual outcome:** `grit_readiness` for that institute — what students at this college actually cleared. A skill the curriculum "covers" but whose clear rate is near zero is a *delivery* finding, not a coverage one.
 
 **The rules the plan MUST satisfy** — all 11 rows of `scheduling_rules` are binding. Check the produced or reviewed plan against each and name any it breaks. The ones that catch the most real failures: *Maintain Uniform Curriculum Pacing* (no slow-start-then-cram), *Preserve Prerequisite Learning Order*, *Complete Prerequisites Before Assessments*, *Ensure Sufficient Revision Before Major Exams*.
 

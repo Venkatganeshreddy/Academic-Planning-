@@ -404,6 +404,104 @@ def build(db="data/aip.duckdb", verbose=True):
             FROM student_performance sp
             GROUP BY {_grain}""")
 
+    # --- GRIT (the job-readiness contests) ---
+    # grit_attempts is one row per student per contest booking. Two things make the raw
+    # table wrong to query directly, so both are encoded here once:
+    #   1. a third of the rows are no-shows (badge NOT ATTEMPTED / YET TO ATTEMPT, no
+    #      score at all) — averaging over them silently halves every score;
+    #   2. students re-attempt, and GRIT's own rule (grit-programme.md §7) is that only
+    #      the HIGHEST attempt counts. Counting rows counts sittings, not students.
+    # grit_best resolves both: exactly one row per student × skill × level.
+    con.execute("""CREATE VIEW grit_best AS
+        WITH v AS (
+            SELECT g.*,
+                   (g.badge NOT IN ('NOT ATTEMPTED', 'YET TO ATTEMPT')) AS attempted,
+                   (g.badge IN ('GOLD', 'SILVER'))                      AS cleared
+            FROM grit_attempts g
+            -- cancelled/disqualified sittings are not results (1.4k cancelled, 9 DQ)
+            WHERE g.niat_id IS NOT NULL
+              AND lower(coalesce(g.is_cancelled, 'no'))    <> 'yes'
+              AND lower(coalesce(g.is_disqualified, 'no')) <> 'yes'
+        ),
+        r AS (
+            SELECT *,
+                   count(*)      OVER (PARTITION BY niat_id, skill, level) AS attempts,
+                   row_number()  OVER (PARTITION BY niat_id, skill, level
+                                       ORDER BY attempted DESC, score_pct DESC NULLS LAST,
+                                                contest_date DESC) AS rn
+            FROM v
+        )
+        SELECT u.institute_name,      -- NULL where GRIT ran at a college with no academic
+               r.college_name,        -- data on file (NIAT itself, Aurora) — join, don't assume
+               r.niat_id, r.skill, r.level, r.contest_date, r.contest_tag,
+               r.score_pct, r.badge, r.attempted, r.cleared, r.attempts,
+               -- §9 sets a DIFFERENT pass mark per skill (75% Critical Thinking, 90%
+               -- Server-Side), so a raw score says nothing across skills. The distance to
+               -- that skill's own Silver bar does: -5 means "5 points short", everywhere.
+               -- TRY_CAST: canonical CSVs load as all_varchar (see the reader above)
+               TRY_CAST(b.silver_min AS DOUBLE)                             AS silver_min,
+               round(r.score_pct - TRY_CAST(b.silver_min AS DOUBLE), 2)     AS margin_to_silver,
+               r.time_spent_mins, r.duration_mins,
+               r.face_not_detected, r.inactive_warnings, r.noise_detected
+        FROM r
+        LEFT JOIN universities u ON u.institute_name = r.college_name
+        -- LEFT so a skill×level with no published band keeps its row (margin just NULLs)
+        LEFT JOIN grit_score_bands b ON upper(b.skill) = r.skill AND b.level = r.level
+        WHERE r.rn = 1""")
+
+    # grit_readiness: the headline shape — for each college × skill × level, how many
+    # students showed up and how many actually cleared it (Gold/Silver; §7 says Try Again
+    # does not unlock the next level). L1 is the Year-1 readiness benchmark.
+    con.execute("""CREATE VIEW grit_readiness AS
+        SELECT institute_name, college_name, skill, level,
+               count(*)                                   AS students,
+               count(*) FILTER (WHERE attempted)          AS attempted_students,
+               round(100.0 * count(*) FILTER (WHERE attempted) / count(*), 1) AS attempt_pct,
+               count(*) FILTER (WHERE cleared)            AS cleared_students,
+               -- of everyone enrolled into the contest (the number that matters for the
+               -- Year-1 milestone) and, separately, of those who actually sat it.
+               round(100.0 * count(*) FILTER (WHERE cleared) / count(*), 1) AS cleared_pct,
+               round(100.0 * count(*) FILTER (WHERE cleared)
+                     / nullif(count(*) FILTER (WHERE attempted), 0), 1)     AS cleared_pct_of_attempted,
+               round(avg(score_pct), 1)                   AS avg_score_pct,
+               -- The cross-skill-comparable measures. cleared_pct answers "did they pass";
+               -- avg_margin_to_silver answers "by how much did they miss", which is the only
+               -- one you can rank skills by (a 90% bar and a 75% bar are not the same test).
+               round(avg(margin_to_silver) FILTER (WHERE attempted), 1)  AS avg_margin_to_silver,
+               -- within 10 points of clearing: the students a targeted intervention reaches
+               count(*) FILTER (WHERE attempted AND NOT cleared
+                                AND margin_to_silver >= -10)             AS near_miss_students,
+               min(contest_date) AS first_contest, max(contest_date) AS last_contest
+        FROM grit_best GROUP BY 1, 2, 3, 4""")
+
+    # grit_vs_delivery: the GRIT outcome next to the delivery that was supposed to build it.
+    # Bridge is grit_skill_subject (docs/grit-skill-course-map.md, "Delivered Year-1 subject
+    # -> GRIT skill"): a skill maps to several delivered subjects, so practice metrics are
+    # SUMMED and the rates RECOMPUTED — never average a per-row %. Correlation, not proof:
+    # the subject->skill assignment is the doc's judgement, and practice data is per section
+    # while GRIT is per student, so they describe the same cohort at different grains.
+    con.execute("""CREATE VIEW grit_vs_delivery AS
+        WITH perf AS (
+            SELECT sp.institute_name, upper(m.grit_skill) AS skill,
+                   count(DISTINCT sp.subject)                             AS subjects_delivered,
+                   round(100.0 * sum(TRY_CAST(sp.mcq_correct AS BIGINT))
+                         / nullif(sum(TRY_CAST(sp.mcq_attempts AS BIGINT)), 0), 1)          AS mcq_accuracy_pct,
+                   round(100.0 * sum(TRY_CAST(sp.mcq_attempts AS BIGINT))
+                         / nullif(sum(TRY_CAST(sp.mcq_expected_attempts AS BIGINT)), 0), 1) AS mcq_attempt_pct,
+                   round(100.0 * sum(TRY_CAST(sp.coding_completions AS BIGINT))
+                         / nullif(sum(TRY_CAST(sp.coding_attempts AS BIGINT)), 0), 1)       AS coding_completion_pct
+            FROM student_performance sp
+            JOIN grit_skill_subject m ON m.subject = sp.subject
+            GROUP BY 1, 2
+        )
+        SELECT r.institute_name, r.skill, r.level,
+               r.students, r.attempt_pct, r.cleared_pct, r.avg_score_pct,
+               r.avg_margin_to_silver, r.near_miss_students,
+               p.subjects_delivered, p.mcq_attempt_pct, p.mcq_accuracy_pct, p.coding_completion_pct
+        FROM grit_readiness r
+        LEFT JOIN perf p ON p.institute_name = r.institute_name AND p.skill = r.skill
+        WHERE r.institute_name IS NOT NULL""")
+
     if verbose:
         print("=== aip.duckdb (from committed canonical) ===")
         for (t,) in con.execute("SHOW TABLES").fetchall():
