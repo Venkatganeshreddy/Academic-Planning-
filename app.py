@@ -15,7 +15,9 @@ st.set_page_config(page_title="NIAT Learning Copilot", page_icon="🎓", layout=
 
 dashboard.require_login()   # Google OIDC gate — Nxtwave accounts only; renders before any page
 
-dashboard.db_path()      # build the DB once per boot (cached)
+# DB build is DEFERRED — the Chat landing needs no data, so building here would put the
+# whole cold-start (~5-10s CSV→DuckDB build) in front of the start page's first paint.
+# Pages build it lazily on first query instead (see dashboard.conn / _build_db, still cached).
 dashboard.inject_css()
 
 # Explicit url_path per page: all three callables are named `render`, and Streamlit

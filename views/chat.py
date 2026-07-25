@@ -48,7 +48,8 @@ STARTERS = {
 
 
 def render():
-    con = dashboard.conn()
+    # No DB connection here — the landing (starters + sidebar) needs no data, so opening
+    # one would trigger the cold-start build before the page paints. Built lazily on ask.
     api_key = dashboard.secret("OPENROUTER_API_KEY")
 
     if "msgs" not in st.session_state:
@@ -172,6 +173,7 @@ def render():
         spend = {"cost": 0.0, "prompt_tokens": 0, "completion_tokens": 0}
         with st.chat_message("assistant"), st.spinner("Querying the data…"):
             try:
+                con = dashboard.conn()   # first call builds the DB (deferred off the landing paint)
                 text, _, spend = agent.answer(question, history=history, api_key=api_key, model=model, con=con)
             except agent.OpenRouterError as e:
                 text = f"❌ Could not reach the model: {e}"
