@@ -147,9 +147,13 @@ Map the HLID onto real dates at three granularities so staff can act on it day-t
 - Skill assessments / module quizzes on their own slots; revision weeks before major exams.
 - Break weeks as **named** rows (e.g. "Diwali break"), not hidden slack.
 
-**Daily** — the per-day session template, run at the persona lanes' three speeds:
-`| Slot | Accelerator | On-track | Near-miss / Non-starter |`
-Keep the **protected practice / MCQ block** the remediation lanes cannot skip.
+**Daily** — a **day-wise Mon–Sat timetable** for one representative teaching week (pick a mid-semester week when several courses run). Emit THREE parts, in order:
+
+1. **The fixed daily rhythm** — what each slot is for: `| Slot | Time | Purpose |` — six ~50-min slots: Lecture A · Lecture B (different course, no back-to-back) · Practice paired to a morning lecture · **Protected MCQ block** · Coding/lab · Flex (assessment · quiz · re-attempt · mentoring).
+2. **The week, filled in** — days as columns, slots as rows: `| Slot | Mon | Tue | Wed | Thu | Fri | Sat |` — put a real course/activity in each cell for that week's running courses, honouring the sequencing rules (lecture→practice same day, no two lectures of one course back-to-back, the MCQ block every day).
+3. **The same day at three speeds** — how the persona lanes split, in the practice/flex slots: `| Persona | MCQ block | Flex |` — Accelerator (L2 stretch / mentors), On-track (standard / on-schedule), Near-miss & Non-starter (**re-teach + mandatory MCQ** / **weekly re-attempt on lowest skill**).
+
+Use the crisp course abbreviations from the HLID (WAD-1, CP, GenAI, Quant, Maths), not reworded plain-English names.
 
 ### 7. `## How it's better — layer by layer`
 Mandatory for a **re-baseline** (any university with prior delivery — MRV/CDU/Aurora/NRI all qualify); skip only for a genuinely new college with no history. Per data layer, how this plan improves on the previous one, then a diff table:
