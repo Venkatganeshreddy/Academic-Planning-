@@ -93,22 +93,29 @@ Trigger: the user gives a **start date, an end date, and a list of subjects** (�
 - **Ground the plan.** If the university has delivery history, base every number on it (the "inputs to weigh" in the data notes: `delivered_niat` for actual weeks / weekly load / late starts / collapse weeks, `session_feedback_safe`, `issues`, `deviation`, `course_plan_vs_actual` / `academic_plan_derived`). If it is a **new college with no history**, build a TEMPLATE from the most comparable university's `designed_course_plan` and **say explicitly that it is a template and which university it came from.**
 - **Compute the window.** `available_weeks` = whole weeks between start and end. Reserve **named** break weeks from the derived holiday pattern (or standard breaks if none known). `instructional_weeks` = available − breaks, and it **must be ≥ 15** (`planning_standards.total_instructional_weeks_aicte`) — if the window is too short, say so and state what has to give. Keep weekly load ≤ 33 hrs and total course hours within the 495-hour budget.
 - **GRIT L1 coverage (Year-1 / Sem 1-2 batches).** Map the resolved subject set through `courses.stack` to the GRIT skills it builds, and flag any **required GRIT L1** not covered — `grit-skill-course-map.md` is the reference; the concrete blocker is CS Fundamentals L1 (OS/networking). Surface it in *Inputs & grounding*, not only the opt-in unconstrained view.
-- **Personas (Year-1 batches).** Pull one row per student from `grit_best` (filter `level='L1'`) for the university now — you need the distribution for sections 2 and 3.
+- **Personas (Year-1 batches).** Read `grit_persona_summary` for the university now (`WHERE institute_name = '<college>'`, or `WHERE college_name = '<college>'` for a delivery-only college) — you need the distribution for sections 2 and 3. Do NOT re-derive the buckets by hand.
 
 ### 1. `## Inputs & grounding`
 The subject→course map; the university and how it's grounded (own history, or "template from <X>"); the window (start, end, available / instructional / break weeks); the budget line (495 hrs over the instructional weeks); and a one-line feedback read, content-readiness flags, and the GRIT L1 coverage/gap.
 
 ### 2. `## Learner personas` (Year-1 / Sem 1-2 batches)
-**Derive the personas from the university's OWN per-student GRIT Level-1 profiles — never assume them.** From `grit_best` (filter `level='L1'`), per student: skills attempted, skills cleared, avg `score_pct`, and `margin_to_silver` (distance below each skill's own Silver bar — never rank across skills by raw clear rate). Bucket every student with these **fixed thresholds** (identical every run and across universities, so segments stay comparable):
+**Read the personas from the precomputed `grit_persona_summary` view — do NOT re-derive the buckets in SQL.** The bucket rule is fixed inside the view, so the split is **identical every run** (this is what removes the 183-vs-161 drift). One `SELECT` gets you the whole distribution:
+```sql
+SELECT persona, students, share_pct, avg_l1_attempted, avg_l1_cleared, avg_score_pct, avg_margin_to_silver
+FROM grit_persona_summary
+WHERE institute_name = '<college>'   -- or: college_name = '<college>' for a delivery-only college (e.g. Aurora)
+ORDER BY students DESC;
+```
+The view buckets each student on their L1 profile by this fixed rule (denominator = **attempted**, never "skills with a record"):
 
 | Persona | Rule (per student, at L1) |
 |---|---|
-| **Accelerator** | cleared ≥ 75% of attempted **and** avg score ≥ 85% |
-| **On-track** | cleared 40–75% of skills |
-| **Near-miss** | attempted ≥ 1 but cleared < 40% |
+| **Accelerator** | cleared ≥ 75% **of attempted** and avg score ≥ 85% |
+| **On-track** | cleared 40–75% **of attempted** |
+| **Near-miss** | attempted ≥ 1 but cleared < 40% **of attempted** |
 | **Non-starter** | 0 L1 attempts |
 
-Emit the **distribution table** from the query — `| Persona | Students | Share | Avg L1 attempted | Avg L1 cleared | Avg score | Pts below silver |` — then a one-line **"what drives the plan"** call: if the majority is Near-miss / Non-starter, the calendar is paced for them, not the top. Personas are a snapshot; note they should be re-bucketed monthly. (No per-student GRIT data ⇒ skip this section and section 3, and say why.)
+Emit the **distribution table straight from the view** — `| Persona | Students | Share | Avg L1 attempted | Avg L1 cleared | Avg score | Pts below silver |` (map columns `students · share_pct · avg_l1_attempted · avg_l1_cleared · avg_score_pct · avg_margin_to_silver`) — then a one-line **"what drives the plan"** call: if the majority is Near-miss / Non-starter, the calendar is paced for them, not the top. Personas are a snapshot; note they re-bucket as students clear skills. (No rows returned ⇒ no per-student GRIT data ⇒ skip this section and section 3, and say why.)
 
 ### 3. `## Persona → pacing → GRIT milestone`
 One row per persona — `| Persona | Pacing lane | Calendar difference | Sem-1 milestone target |`:

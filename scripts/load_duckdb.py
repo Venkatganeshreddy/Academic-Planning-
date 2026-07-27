@@ -502,6 +502,46 @@ def build(db="data/aip.duckdb", verbose=True):
         LEFT JOIN perf p ON p.institute_name = r.institute_name AND p.skill = r.skill
         WHERE r.institute_name IS NOT NULL""")
 
+    # grit_personas: ONE row per student, bucketed into the fixed 4-persona taxonomy the
+    # planner uses. The bucket rule lives HERE, in SQL, not in the model's head — so the
+    # split is byte-identical every run (the copilot reads this view, never re-derives it).
+    # Rule = cleared / ATTEMPTED (the demonstrated success rate on skills the student took;
+    # "skills with a record" is a data artifact of which contests ran, so it is NOT the
+    # denominator). Non-starter has no fuzzy boundary; the other three share one denominator,
+    # which is what removes the 183-vs-161 drift. college_name keys the delivery-only
+    # colleges (Aurora) where institute_name is NULL. L1 = the Year-1 readiness benchmark.
+    con.execute("""CREATE VIEW grit_personas AS
+        WITH s AS (
+            SELECT institute_name, college_name, niat_id,
+                   count(*) FILTER (WHERE level='L1' AND attempted) AS l1_attempted,
+                   count(*) FILTER (WHERE level='L1' AND cleared)   AS l1_cleared,
+                   round(avg(score_pct)       FILTER (WHERE level='L1' AND attempted), 1) AS avg_score_pct,
+                   round(avg(margin_to_silver) FILTER (WHERE level='L1' AND attempted), 1) AS avg_margin_to_silver
+            FROM grit_best GROUP BY 1, 2, 3
+        )
+        SELECT *,
+               CASE
+                 WHEN l1_attempted = 0 THEN 'Non-starter'
+                 WHEN l1_cleared >= 0.75 * l1_attempted AND avg_score_pct >= 85 THEN 'Accelerator'
+                 WHEN l1_cleared >= 0.40 * l1_attempted THEN 'On-track'
+                 ELSE 'Near-miss'
+               END AS persona
+        FROM s""")
+
+    # grit_persona_summary: the per-college distribution the plan actually prints — one row
+    # per (college, persona) with counts, share, and the average L1 profile. The copilot
+    # reads THIS for section 2 of a plan instead of writing its own bucketing SQL.
+    con.execute("""CREATE VIEW grit_persona_summary AS
+        SELECT institute_name, college_name, persona,
+               count(*)                                                     AS students,
+               round(100.0 * count(*)
+                     / sum(count(*)) OVER (PARTITION BY institute_name, college_name), 0) AS share_pct,
+               round(avg(l1_attempted), 1)        AS avg_l1_attempted,
+               round(avg(l1_cleared), 1)          AS avg_l1_cleared,
+               round(avg(avg_score_pct), 1)       AS avg_score_pct,
+               round(avg(avg_margin_to_silver), 1) AS avg_margin_to_silver
+        FROM grit_personas GROUP BY 1, 2, 3""")
+
     if verbose:
         print("=== aip.duckdb (from committed canonical) ===")
         for (t,) in con.execute("SHOW TABLES").fetchall():
