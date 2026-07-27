@@ -81,48 +81,94 @@ Then a short honest note on what would make it wrong. **Stop there** — do **no
 ---
 
 ## Output — a new-batch plan (Job B): start/end dates + subjects
-Trigger: the user gives a **start date, an end date, and a list of subjects** (± a university). Do the resolution first, then emit five sections.
+Trigger: the user gives a **start date, an end date, and a list of subjects** (± a university). Do Step 0 first, then emit the sections **in the exact order below**.
+
+**Which layout to use:**
+- **Year-1 / Sem 1-2 batch (default) → emit ALL EIGHT sections, in this exact order:** 1 Inputs & grounding · 2 Learner personas · 3 Persona → pacing → GRIT milestone · 4 The HLID · 5 Session sequencing logic · 6 Goal cascade (monthly/weekly/daily) · 7 How it's better — layer by layer (+ diff table) · 8 What would make this wrong. Then the **Sources** line. Sections 2, 3, 6 and 7 are **not optional** for a Year-1 batch — the persona layer, the milestone-linked cascade, and the evidenced old→new diff are all part of the deliverable.
+- **Later-year batch (Sem 3-4) or a college with no per-student GRIT / `student_performance` data → SKIP sections 2 and 3** (say why: no per-student GRIT data), keep the rest, and pace the daily template by delivered-session engagement instead of personas.
+- **A genuinely new college with no delivery history → SKIP section 7** (nothing to diff against); say the plan is a template from the named comparable university.
 
 ### Step 0 — resolve the inputs (before writing the plan)
 - **Subjects → courses.** The subjects are `nxtwave_tag`s. Map each to the university's OWN course name via `subject_tags` (its `university_course` for that `nxtwave_tag`); fall back to `courses` / `tag_content_map` and the canonical name. State the mapping you used. Do not rename across universities.
 - **Ground the plan.** If the university has delivery history, base every number on it (the "inputs to weigh" in the data notes: `delivered_niat` for actual weeks / weekly load / late starts / collapse weeks, `session_feedback_safe`, `issues`, `deviation`, `course_plan_vs_actual` / `academic_plan_derived`). If it is a **new college with no history**, build a TEMPLATE from the most comparable university's `designed_course_plan` and **say explicitly that it is a template and which university it came from.**
 - **Compute the window.** `available_weeks` = whole weeks between start and end. Reserve **named** break weeks from the derived holiday pattern (or standard breaks if none known). `instructional_weeks` = available − breaks, and it **must be ≥ 15** (`planning_standards.total_instructional_weeks_aicte`) — if the window is too short, say so and state what has to give. Keep weekly load ≤ 33 hrs and total course hours within the 495-hour budget.
-- **GRIT L1 coverage (Year-1 / Sem 1-2 batches).** Map the resolved subject set through `courses.stack` to the GRIT skills it builds, and flag any **required GRIT L1** not covered — `grit-skill-course-map.md` is the reference; the concrete blocker is CS Fundamentals L1 (OS/networking). Surface it in *Inputs & grounding* / *How it's better*, not only the opt-in unconstrained view.
+- **GRIT L1 coverage (Year-1 / Sem 1-2 batches).** Map the resolved subject set through `courses.stack` to the GRIT skills it builds, and flag any **required GRIT L1** not covered — `grit-skill-course-map.md` is the reference; the concrete blocker is CS Fundamentals L1 (OS/networking). Surface it in *Inputs & grounding*, not only the opt-in unconstrained view.
+- **Personas (Year-1 batches).** Pull one row per student from `grit_best` (filter `level='L1'`) for the university now — you need the distribution for sections 2 and 3.
 
 ### 1. `## Inputs & grounding`
-The subject→course map; the university and how it's grounded (own history, or "template from <X>"); the window (start, end, available / instructional / break weeks); and the budget line (495 hrs over the instructional weeks).
+The subject→course map; the university and how it's grounded (own history, or "template from <X>"); the window (start, end, available / instructional / break weeks); the budget line (495 hrs over the instructional weeks); and a one-line feedback read, content-readiness flags, and the GRIT L1 coverage/gap.
 
-### 2. `## The 2026 HLID — <UNI>, <start>–<end>`
-The same artifact table as Job A:
+### 2. `## Learner personas` (Year-1 / Sem 1-2 batches)
+**Derive the personas from the university's OWN per-student GRIT Level-1 profiles — never assume them.** From `grit_best` (filter `level='L1'`), per student: skills attempted, skills cleared, avg `score_pct`, and `margin_to_silver` (distance below each skill's own Silver bar — never rank across skills by raw clear rate). Bucket every student with these **fixed thresholds** (identical every run and across universities, so segments stay comparable):
+
+| Persona | Rule (per student, at L1) |
+|---|---|
+| **Accelerator** | cleared ≥ 75% of attempted **and** avg score ≥ 85% |
+| **On-track** | cleared 40–75% of skills |
+| **Near-miss** | attempted ≥ 1 but cleared < 40% |
+| **Non-starter** | 0 L1 attempts |
+
+Emit the **distribution table** from the query — `| Persona | Students | Share | Avg L1 attempted | Avg L1 cleared | Avg score | Pts below silver |` — then a one-line **"what drives the plan"** call: if the majority is Near-miss / Non-starter, the calendar is paced for them, not the top. Personas are a snapshot; note they should be re-bucketed monthly. (No per-student GRIT data ⇒ skip this section and section 3, and say why.)
+
+### 3. `## Persona → pacing → GRIT milestone`
+One row per persona — `| Persona | Pacing lane | Calendar difference | Sem-1 milestone target |`:
+
+| Persona | Pacing lane | Sem-1 milestone target |
+|---|---|---|
+| **Accelerator** | +1 ahead — optional L2 stretch sets, peer-mentor slots | clear 5–6 L1, start L2 |
+| **On-track** | on-plan — close the gap via targeted re-attempts | clear all required L1 |
+| **Near-miss** | on-plan + remediation — protected practice, weekly re-attempt window | clear ≥ 3 L1 (start with the highest current clear rate) |
+| **Non-starter** | re-engage first — week 1–3 onboarding on the easiest skill | ≥ 1 attempt on every skill; clear ≥ 1 |
+
+Follow the table with the **actual L1 clear rates today** (`grit_readiness`, this university) and name the **mechanism** the data shows — e.g. near-zero MCQ-practice attempt (`student_perf_by_subject`) against MCQ-scored L1 — pointing at the protected MCQ block in section 6 as the lever. Tie every target to the **GRIT L1 milestone** (`grit-skill-course-map.md` — clearing all required Year-1 L1).
+
+### 4. `## The 2026 HLID — <UNI>, <start>–<end>`
 `| Course | Sessions | Session Hrs | Practice Hrs | Micro Assess Hrs | Start | End | Weeks |`
-one row per requested course + a **totals row**. Ground sessions in history (or the template); derive hours by the **course's own ratio** (see the data-notes hours recipe), never a flat average. Close with `Total X hrs of 495 = Y% utilisation, ~Z hrs/week` (target 90–93%).
+one row per requested course + a **totals row**. Ground sessions in history (or the template); derive hours by the **course's own ratio** (data-notes hours recipe), never a flat average. Close with `Total X hrs of 495 = Y% utilisation, ~Z hrs/week`. Flag any row that is a restoration **[target]** (a course that collapsed last year) rather than measured history.
 
-### 3. `## Week-by-week academic calendar`
-Map the HLID onto the real dates. One row per week from start to end:
+### 5. `## Session sequencing logic`
+The order rules the calendar enforces, each naming the `scheduling_rules` row it satisfies:
+- **Prerequisite order** (*Preserve Prerequisite Learning Order*, *Complete Prerequisites Before Assessments*).
+- **Lecture → practice within 30 hrs** (*Lecture-to-Practice Gap*) — tie this to the persona mechanism (low MCQ engagement).
+- **No back-to-back lectures of one course; no back-to-back quizzes** (*Avoid Consecutive Video Sessions / Module Quizzes*).
+- **Protected MCQ-practice block** the remediation lanes cannot skip.
+- **Revision before exams; assessment slots fixed** (*Ensure Sufficient Revision*, *Protect Assessment Slots*).
+
+### 6. `## Goal cascade — monthly, weekly & daily`
+Map the HLID onto real dates at three granularities so staff can act on it day-to-day.
+
+**Monthly** — one row per month; each month **closes on a GRIT L1 milestone** tied to the persona targets:
+`| Month | Focus | Milestone checkpoint |`
+
+**Weekly** — the academic calendar. One row per week from start to end:
 `| Week | Dates | Courses running (hrs) | Milestone / Assessment | Break / Notes |`
-- **Stagger** course starts (do not start everything in week 1), in prerequisite order (`scheduling_rules`: *Preserve Prerequisite Learning Order*, *Complete Prerequisites Before Assessments*).
+- **Stagger** course starts (do not start everything in week 1), in prerequisite order.
 - **Even pacing** — spread load, no slow start then cram (*Maintain Uniform Curriculum Pacing*).
-- Put skill assessments / module quizzes on their own slots; leave revision weeks before major exams (*Ensure Sufficient Revision Before Major Exams*).
-- Show break weeks as **named** rows (e.g. "Diwali break"), not hidden slack.
+- Skill assessments / module quizzes on their own slots; revision weeks before major exams.
+- Break weeks as **named** rows (e.g. "Diwali break"), not hidden slack.
 
-### 4. `## How it's better — layer by layer`
-Per data layer, how this plan improves on the previous plan/delivery — then a diff table.
-- **Subject** — every requested subject is covered; call out any the previous plan omitted but delivery ran (`coverage='delivered_not_planned'`).
-- **Course** — realistic staggered starts and durations from `start_slip_days` / `actual_weeks`, vs the old "everything starts week 1".
-- **Session** — peak weekly load ≤ 33 hrs and even pacing, vs the old plan's slow-start-then-cram (quote the old peak).
-- **Content** — sessions sit where content is ready; flag any subject with **no content ingested** (`content_all`) as a delivery risk.
-- **Feedback** — low-rated courses (`session_feedback_safe`) get protection / rework; name them.
-- **Planning / standards** — fits the 495h / ≥15wk budget with the buffer placed as real named break weeks; name any of the 11 `scheduling_rules` the OLD plan broke and this one satisfies.
+**Daily** — the per-day session template, run at the persona lanes' three speeds:
+`| Slot | Accelerator | On-track | Near-miss / Non-starter |`
+Keep the **protected practice / MCQ block** the remediation lanes cannot skip.
+
+### 7. `## How it's better — layer by layer`
+Mandatory for a **re-baseline** (any university with prior delivery — MRV/CDU/Aurora/NRI all qualify); skip only for a genuinely new college with no history. Per data layer, how this plan improves on the previous one, then a diff table:
+- **Subject** — every requested subject on-plan; call out any the previous plan omitted but delivery ran (`coverage='delivered_not_planned'`).
+- **Course** — realistic staggered starts / durations from `start_slip_days` / `actual_weeks`, vs the old "everything starts week 1"; name the worst old slips.
+- **Session** — peak weekly load ≤ 33 hrs and even pacing, vs the old slow-start-then-cram (quote the old peak).
+- **Content** — sessions where content is ready; flag no-content subjects (`content_all`).
+- **Feedback** — low-rated courses (`session_feedback_safe`) protected / reworked, named.
+- **Standards** — fits 495h / ≥15wk with the buffer as named break weeks; name the `scheduling_rules` the old plan broke.
 
 Then the concrete diff — one row per material change:
 `| Layer | Previous | 2026 plan | Evidence |`
-(old value → new value → the query/finding that forces it).
+(old value → new value → the query/finding that forces it; cite the `issue_id` where a recorded issue drives it).
 
-### 5. `## What would make this wrong`
-A short honest note: which numbers are derived vs measured, any template assumptions, and missing data.
+### 8. `## What would make this wrong`
+A short honest note: which numbers are derived vs measured, any **[target]** rows and template assumptions, the PROPOSED GRIT level mapping, that personas are a snapshot, and missing data (placeholder exam/holiday dates, no-content courses). Close with the **Sources** line (plain-English body, exact tables here).
 
 ### (on request only) `## What could be better — the unconstrained view`
-**Not part of the default plan.** The five sections above are the deliverable — end with a one-line offer of the unconstrained view, and produce it as a **separate follow-up** only when the user asks ("unconstrained view", "what could be better", or the app's **What could be better** button). Spec: *What could be better — the unconstrained view (both jobs)* below.
+**Not part of the default plan.** The sections above are the deliverable — end with a one-line offer of the unconstrained view, and produce it as a **separate follow-up** only when the user asks ("unconstrained view", "what could be better", or the app's **What could be better** button). Spec: *What could be better — the unconstrained view (both jobs)* below.
 
 ---
 
