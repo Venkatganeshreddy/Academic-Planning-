@@ -210,9 +210,13 @@ def build(db="data/aip.duckdb", verbose=True):
     # -planned (MRV ran Introduction to NIAT, Test Your Current Knowledge and Foreign
     # Language, none of which are in its HLID) are both real findings.
     con.execute("""CREATE VIEW course_plan_vs_actual AS
-        WITH plan AS (
+        WITH cx AS (   -- one catalogue name per raw title (dedup the crosswalk's layers)
+            SELECT lower(trim(raw_title)) AS rt, any_value(catalogue_course_title) AS cat
+            FROM course_crosswalk WHERE catalogue_course_title IS NOT NULL GROUP BY 1
+        ),
+        plan AS (
             SELECT p.university, u.institute_name, p.course,
-                   course_key_loose(p.course) AS k,
+                   course_key(coalesce(cxp.cat, p.course)) AS k,   -- map to catalogue, then key
                    TRY_CAST(p.sessions_count AS DOUBLE)         AS planned_sessions,
                    TRY_CAST(p.session_hours AS DOUBLE)          AS planned_session_hours,
                    TRY_CAST(p.practice_hours AS DOUBLE)         AS planned_practice_hours,
@@ -225,6 +229,7 @@ def build(db="data/aip.duckdb", verbose=True):
                    TRY_CAST(p.weeks_required AS DOUBLE)         AS planned_weeks
             FROM designed_course_plan p
             JOIN universities u ON u.code = p.university
+            LEFT JOIN cx cxp ON cxp.rt = lower(trim(p.course))
             -- sub-modules are components of the course above them; including them double-counts
             WHERE lower(coalesce(p.is_submodule,'false')) <> 'true'
         ),
@@ -233,8 +238,9 @@ def build(db="data/aip.duckdb", verbose=True):
             FROM delivered_niat WHERE semester = 'Semester 1' GROUP BY 1
         ),
         act AS (
-            SELECT d.institute_name, d.course_title,
-                   course_key_loose(d.course_title) AS k,
+            SELECT d.institute_name,
+                   min(d.course_title) AS course_title,   -- representative label; variants collapsed by k
+                   course_key(coalesce(cxa.cat, d.course_title)) AS k,   -- map to catalogue, then key
                    s.n_sections,
                    round(count(*) FILTER (WHERE d.session_type='LECTURE')  * 1.0 / s.n_sections, 1) AS actual_lectures_per_section,
                    round(count(*) FILTER (WHERE d.session_type='PRACTICE') * 1.0 / s.n_sections, 1) AS actual_practice_per_section,
@@ -245,13 +251,16 @@ def build(db="data/aip.duckdb", verbose=True):
                    round(100.0 * count(*) FILTER (WHERE d.session_status='COMPLETED') / count(*), 0) AS pct_completed
             FROM delivered_niat d
             JOIN secs s ON s.institute_name = d.institute_name
+            LEFT JOIN cx cxa ON cxa.rt = lower(trim(d.course_title))
             WHERE d.semester = 'Semester 1' AND d.is_scheduled
-            GROUP BY 1, 2, 3, 4
+            GROUP BY d.institute_name, course_key(coalesce(cxa.cat, d.course_title)), s.n_sections
         )
         SELECT
             coalesce(plan.university, u2.code)                 AS university,
             coalesce(plan.institute_name, act.institute_name)  AS institute_name,
             coalesce(plan.course, act.course_title)            AS course,
+            plan.course                                        AS designed_course,
+            act.course_title                                   AS delivered_course,
             CASE WHEN plan.k IS NULL THEN 'delivered_not_planned'
                  WHEN act.k  IS NULL THEN 'planned_not_delivered'
                  ELSE 'both' END                               AS coverage,
@@ -265,8 +274,7 @@ def build(db="data/aip.duckdb", verbose=True):
             act.actual_lectures_per_section - plan.planned_sessions AS session_gap
         FROM plan
         FULL OUTER JOIN act
-          ON plan.institute_name = act.institute_name
-         AND (plan.k = act.k OR starts_with(plan.k, act.k) OR starts_with(act.k, plan.k))
+          ON plan.institute_name = act.institute_name AND plan.k = act.k
         LEFT JOIN universities u2 ON u2.institute_name = act.institute_name
         WHERE coalesce(plan.university, u2.code) IS NOT NULL""")
 
