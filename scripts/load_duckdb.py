@@ -31,6 +31,14 @@ def build(db="data/aip.duckdb", verbose=True):
                   else f"read_csv_auto('{p}', header=true, all_varchar=true)")
         con.execute(f"CREATE TABLE {name} AS SELECT * FROM {reader}")
 
+    # Live BigQuery pulls (scripts/load_from_bq.py) override the canonical snapshots for those
+    # tables. Empty dir => no-op, so this is safe whether or not a live pull has been run.
+    for p in sorted(glob.glob("data/bq_live/*.parquet")):
+        name = os.path.splitext(os.path.basename(p))[0]
+        pp = p.replace(os.sep, "/")
+        con.execute(f"DROP TABLE IF EXISTS {name}")
+        con.execute(f"CREATE TABLE {name} AS SELECT * FROM read_parquet('{pp}')")
+
     # Merge the sheet extension into subject_tags (same columns), then drop the
     # extra table so the crosswalk stays one table. See build_subject_tags_supplement.py.
     if ("subject_tags_supplement",) in con.execute("SHOW TABLES").fetchall():
