@@ -111,6 +111,32 @@ def build(db="data/aip.duckdb", verbose=True):
                               WHERE lower(trim(c.raw_title)) = lower(trim(a.raw_title)))""")
         con.execute("DROP TABLE course_alias")
 
+    # --- Consolidate course-name variants ---------------------------------------------
+    # The warehouse names the same course several ways ("Web Application Development" vs
+    # " 1" / " I" / "-1"). course_key() already groups these (roman->arabic, separators,
+    # drops a trailing 1; keeps 1 != 2). Pick ONE canonical display name per key -- prefer
+    # the catalogue name, then the most common, then the shortest -- and rewrite the
+    # delivered/performance columns so every tab and the designed-plan match show one name.
+    con.execute("""CREATE TEMP TABLE _course_canon AS
+        WITH names AS (
+            SELECT course_title AS nm, 3 AS pri FROM courses            WHERE course_title IS NOT NULL
+            UNION ALL SELECT course_title, 1   FROM delivered_niat      WHERE course_title IS NOT NULL
+            UNION ALL SELECT subject, 1        FROM student_performance WHERE subject      IS NOT NULL
+            UNION ALL SELECT nxtwave_tag, 2    FROM subject_tags        WHERE nxtwave_tag  IS NOT NULL
+        ),
+        agg AS (SELECT course_key(nm) AS ck, nm, max(pri) AS pri, count(*) AS n
+                FROM names GROUP BY course_key(nm), nm),
+        ranked AS (SELECT ck, nm,
+                row_number() OVER (PARTITION BY ck ORDER BY pri DESC, n DESC, length(nm)) AS rk
+                FROM agg)
+        SELECT ck, nm AS canonical FROM ranked WHERE rk = 1""")
+    con.execute("""UPDATE delivered_niat SET course_title = c.canonical
+        FROM _course_canon c WHERE course_key(delivered_niat.course_title) = c.ck""")
+    con.execute("""UPDATE student_performance SET subject = c.canonical
+        FROM _course_canon c WHERE course_key(student_performance.subject) = c.ck""")
+    con.execute("""UPDATE subject_tags SET nxtwave_tag = c.canonical
+        FROM _course_canon c WHERE course_key(subject_tags.nxtwave_tag) = c.ck""")
+
     # content_units: unified view over the three content-item tables.
     con.execute("""CREATE VIEW content_units AS
         SELECT unit_id, course_title, 'objective' AS k FROM objective_questions
