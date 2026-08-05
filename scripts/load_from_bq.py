@@ -74,6 +74,11 @@ QUERIES = {
                GROUP BY session_id
         ) a ON a.session_id = s.session_id
         WHERE s.institute_name IN {inst}
+        -- one row per delivered session (the schedule table repeats a session once per
+        -- content-resource; keep a single row so counts aren't ~3.5x inflated)
+        QUALIFY row_number() OVER (
+            PARTITION BY s.session_id, s.section_name, s.session_start_datetime
+            ORDER BY s.session_status) = 1
     """,
     "session_feedback": """
         WITH usr AS (   -- user -> institute (feedback table has no institute)

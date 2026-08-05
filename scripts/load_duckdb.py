@@ -117,6 +117,21 @@ def build(db="data/aip.duckdb", verbose=True):
     # drops a trailing 1; keeps 1 != 2). Pick ONE canonical display name per key -- prefer
     # the catalogue name, then the most common, then the shortest -- and rewrite the
     # delivered/performance columns so every tab and the designed-plan match show one name.
+    #
+    # Step 1: map each name to its catalogue name via the crosswalk aliases -- this bridges
+    # typos and cross-vocabulary names that course_key can't ("Communication English
+    # Foundation" -> "Communicative English Foundation"; "Workshop Technology (Introduction
+    # to Generative AI)" -> "Introduction to Generative AI"). Step 2 (below) then collapses
+    # the remaining number/roman/separator variants by course_key.
+    con.execute("""CREATE TEMP TABLE _cx AS
+        SELECT lower(trim(raw_title)) AS rt, any_value(catalogue_course_title) AS cat
+        FROM course_crosswalk WHERE catalogue_course_title IS NOT NULL GROUP BY 1""")
+    for _t, _c in (("delivered_niat", "course_title"),
+                   ("student_performance", "subject"),
+                   ("subject_tags", "nxtwave_tag")):
+        con.execute(f"""UPDATE {_t} SET {_c} = x.cat
+            FROM _cx x WHERE x.rt = lower(trim({_t}.{_c})) AND x.cat IS NOT NULL""")
+
     con.execute("""CREATE TEMP TABLE _course_canon AS
         WITH names AS (
             SELECT course_title AS nm, 3 AS pri FROM courses            WHERE course_title IS NOT NULL
@@ -258,7 +273,7 @@ def build(db="data/aip.duckdb", verbose=True):
         SELECT
             coalesce(plan.university, u2.code)                 AS university,
             coalesce(plan.institute_name, act.institute_name)  AS institute_name,
-            coalesce(plan.course, act.course_title)            AS course,
+            coalesce(act.course_title, plan.course)            AS course,   -- canonical (delivered) name, matches academic_plan_derived
             plan.course                                        AS designed_course,
             act.course_title                                   AS delivered_course,
             CASE WHEN plan.k IS NULL THEN 'delivered_not_planned'
