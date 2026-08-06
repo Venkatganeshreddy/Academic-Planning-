@@ -68,6 +68,7 @@ def build(db="data/aip.duckdb", verbose=True):
         AND lower(t) NOT LIKE '%assessment%'
         AND lower(t) NOT LIKE '%test your%'
         AND lower(t) NOT LIKE '%test based%'
+        AND lower(t) NOT LIKE '%quiz%'
         AND lower(t) NOT LIKE '%introduction to niat%'
         AND lower(t) NOT LIKE '%orientation%'
         AND lower(t) NOT LIKE '%foreign language%')""")
