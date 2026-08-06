@@ -126,8 +126,11 @@ def build(db="data/aip.duckdb", verbose=True):
     con.execute("""CREATE TEMP TABLE _cx AS
         SELECT lower(trim(raw_title)) AS rt, any_value(catalogue_course_title) AS cat
         FROM course_crosswalk WHERE catalogue_course_title IS NOT NULL GROUP BY 1""")
+    # NOTE: student_performance.subject is intentionally NOT crosswalk-mapped -- its
+    # course_title is already the clean per-course_id subject the Hex dashboard shows
+    # ("Generative AI"), and the crosswalk has bad aliases (e.g. "Generative AI" ->
+    # "Generative AI for Vision...") that corrupt it.
     for _t, _c in (("delivered_niat", "course_title"),
-                   ("student_performance", "subject"),
                    ("subject_tags", "nxtwave_tag")):
         con.execute(f"""UPDATE {_t} SET {_c} = x.cat
             FROM _cx x WHERE x.rt = lower(trim({_t}.{_c})) AND x.cat IS NOT NULL""")
@@ -147,8 +150,6 @@ def build(db="data/aip.duckdb", verbose=True):
         SELECT ck, nm AS canonical FROM ranked WHERE rk = 1""")
     con.execute("""UPDATE delivered_niat SET course_title = c.canonical
         FROM _course_canon c WHERE course_key(delivered_niat.course_title) = c.ck""")
-    con.execute("""UPDATE student_performance SET subject = c.canonical
-        FROM _course_canon c WHERE course_key(student_performance.subject) = c.ck""")
     con.execute("""UPDATE subject_tags SET nxtwave_tag = c.canonical
         FROM _course_canon c WHERE course_key(subject_tags.nxtwave_tag) = c.ck""")
 
