@@ -39,6 +39,11 @@ def build(db="data/aip.duckdb", verbose=True):
         con.execute(f"DROP TABLE IF EXISTS {name}")
         con.execute(f"CREATE TABLE {name} AS SELECT * FROM read_parquet('{pp}')")
 
+    # Drop unattributable practice rows (couldn't map to a course or semester window) so they
+    # don't clutter the Student Performance subject/semester dropdowns.
+    if ("student_performance",) in con.execute("SHOW TABLES").fetchall():
+        con.execute("DELETE FROM student_performance WHERE subject LIKE 'Unmapped%' OR semester LIKE 'Unmapped%'")
+
     # Merge the sheet extension into subject_tags (same columns), then drop the
     # extra table so the crosswalk stays one table. See build_subject_tags_supplement.py.
     if ("subject_tags_supplement",) in con.execute("SHOW TABLES").fetchall():
